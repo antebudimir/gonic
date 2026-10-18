@@ -3,6 +3,7 @@ package ctrladmin
 import (
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -17,6 +18,40 @@ import (
 	"go.senan.xyz/gonic/mockfs"
 	"go.senan.xyz/gonic/server/ctrladmin/adminui"
 )
+
+func TestServeHomeScheduleTimeRender(t *testing.T) {
+	m := mockfs.New(t)
+	c := &Controller{dbc: m.DB(), scanner: m.Scanner()}
+
+	r := httptest.NewRequest(http.MethodGet, "/admin/home", nil)
+	r = r.WithContext(context.WithValue(r.Context(), CtxUser, &db.User{IsAdmin: true}))
+	resp := c.ServeHome(r)
+	if resp.err != "" {
+		t.Fatalf("servehome err: %s", resp.err)
+	}
+
+	tmpl := template.Must(template.
+		New("layout").
+		Funcs(template.FuncMap(sprig.FuncMap())).
+		Funcs(funcMap()).
+		Funcs(template.FuncMap{"path": func(s string) string { return s }}).
+		ParseFS(adminui.TemplatesFS, "*.tmpl", "**/*.tmpl"))
+
+	resp.data.User = &db.User{IsAdmin: true, Name: "admin"}
+	out := &strings.Builder{}
+	if err := tmpl.ExecuteTemplate(out, resp.template, resp.data); err != nil {
+		t.Fatalf("exec: %v", err)
+	}
+	re := regexp.MustCompile(`name="time"[^>]*`)
+	line := re.FindString(out.String())
+	t.Logf("RENDERED: %s", line)
+	if !strings.Contains(line, "04:30") {
+		t.Logf("OK: renders 04:30")
+	}
+	if strings.Contains(line, "map[") {
+		t.Errorf("BUG REPRODUCED: %s", line)
+	}
+}
 
 func TestServeHomePollingScriptEmbedsLastScanTime(t *testing.T) {
 	m := mockfs.New(t)

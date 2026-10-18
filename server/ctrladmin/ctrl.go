@@ -114,6 +114,7 @@ func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts
 	c.Handle("POST /update_lastfm_api_key_do", adminChain(resp(c.ServeUpdateLastFMAPIKeyDo)))
 	c.Handle("POST /start_scan_inc_do", adminChain(resp(c.ServeStartScanIncDo)))
 	c.Handle("POST /start_scan_full_do", adminChain(resp(c.ServeStartScanFullDo)))
+	c.Handle("POST /update_scan_schedule_do", adminChain(resp(c.ServeUpdateScanScheduleDo)))
 	c.Handle("POST /add_podcast_do", adminChain(resp(c.ServePodcastAddDo)))
 	c.Handle("POST /delete_podcast_do", adminChain(resp(c.ServePodcastDeleteDo)))
 	c.Handle("POST /download_podcast_do", adminChain(resp(c.ServePodcastDownloadDo)))
@@ -286,12 +287,15 @@ type templateData struct {
 	Version string
 
 	// home
-	Stats                      db.Stats
-	RequestRoot                string
-	RecentFolders              []*db.Album
-	AllUsers                   []*db.User
-	LastScanTime               time.Time
-	IsScanning                 bool
+	Stats                   db.Stats
+	RequestRoot             string
+	RecentFolders           []*db.Album
+	AllUsers                []*db.User
+	LastScanTime            time.Time
+	IsScanning              bool
+	ScanSchedule            *scanner.ScanSchedule
+	ScanScheduleDaysOptions []int
+	NextScanRun             string
 	TranscodePreferences       []*db.TranscodePreference
 	TranscodeFormatPreferences []*db.TranscodeFormatPreference
 	TranscodeProfiles          map[string]transcode.Profile

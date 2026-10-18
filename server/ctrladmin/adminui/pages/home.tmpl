@@ -74,6 +74,29 @@
             <form class="col-span-full" action="{{ path "/admin/start_scan_full_do" }}" method="post">
                 <input type="submit" title="start a slow scan. gonic will not check the timestamps of changed files. you generally shouldn't need this" value="scan slow (i)">
             </form>
+            <div class="col-span-full text-gray-500 pt-2">automatic scan</div>
+            <form class="col-span-full grid grid-cols-[auto_auto_auto_auto] gap-2 items-center" action="{{ path "/admin/update_scan_schedule_do" }}" method="post">
+                <select name="enabled" id="schedule-enabled" title="whether to scan automatically on a schedule" onchange="document.getElementById('schedule-days').disabled = document.getElementById('schedule-time').disabled = this.value !== '1';">
+                    <option value="0" {{ if not .ScanSchedule.Enabled }}selected{{ end }}>off</option>
+                    <option value="1" {{ if .ScanSchedule.Enabled }}selected{{ end }}>on</option>
+                </select>
+                <select name="days" id="schedule-days" title="interval in days between scans. the interval counts from the last completed scan"{{ if not .ScanSchedule.Enabled }} disabled{{ end }}>
+                    {{ range $days := .ScanScheduleDaysOptions }}
+                        <option value="{{ $days }}" {{ if eq $days $.ScanSchedule.Days }}selected{{ end }}>
+                            {{ if eq $days 1 }}once a day{{ else }}every {{ $days }} days{{ end }}
+                        </option>
+                    {{ end }}
+                </select>
+                <input type="time" name="time" id="schedule-time" value="{{ printf "%02d:%02d" .ScanSchedule.Time.Hour .ScanSchedule.Time.Minute }}" title="time of day to run the scan"{{ if not .ScanSchedule.Enabled }} disabled{{ end }}>
+                <input type="submit" value="save">
+            </form>
+            {{ if .ScanSchedule.Enabled }}
+                {{ if not .LastScanTime.IsZero }}
+                    <p class="col-span-full text-gray-500" title="runs every N days at the set time; manual scans never postpone it">last scan: {{ .LastScanTime | dateHuman }} · next scheduled run: {{ .NextScanRun }}</p>
+                {{ else }}
+                    <p class="col-span-full text-gray-500">next scheduled run: {{ .NextScanRun }}</p>
+                {{ end }}
+            {{ end }}
         {{ end }}
         <div id="scan-status" class="text-green-500 col-span-full" style="{{ if not .IsScanning }}display:none;{{ end }}"></div>
     </div>

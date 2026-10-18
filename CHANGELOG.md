@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.22.0-fork.2](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.1...v0.22.0-fork.2) (2026-10-19)
+
+
+### Features
+
+* **admin:** configurable automatic scan schedule
+
+### Bug Fixes
+
+* **admin:** keep saved schedule when days/time fields are disabled
+
+
 ## [0.22.0-fork.1](https://www.github.com/antebudimir/gonic/compare/v0.22.0...v0.22.0-fork.1) (2026-10-19)
 
 

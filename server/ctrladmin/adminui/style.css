@@ -29,6 +29,14 @@ input[type="submit"] {
   @apply text-center w-[6rem] md:w-[8rem] font-bold;
 }
 
+input[type]:disabled,
+select:disabled {
+  @apply opacity-50 cursor-not-allowed;
+  outline-color: rgba(255, 142, 83, 0.15);
+  color: rgb(130, 140, 140);
+}
+
+
 .ellipsis {
   @apply max-w-full overflow-hidden text-ellipsis whitespace-nowrap;
 }

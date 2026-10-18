@@ -67,6 +67,14 @@ func (c *Controller) ServeHome(r *http.Request) *Response {
 	}
 
 	data.IsScanning = c.scanner.IsScanning()
+	data.ScanSchedule, err = c.scanner.Schedule()
+	if err != nil {
+		return &Response{code: 500, err: fmt.Sprintf("error getting scan schedule: %v", err)}
+	}
+	data.ScanScheduleDaysOptions = make([]int, 0, 14)
+	for days := 1; days <= 14; days++ {
+		data.ScanScheduleDaysOptions = append(data.ScanScheduleDaysOptions, days)
+	}
 	tStr, err := c.dbc.GetSetting(db.LastScanTime)
 	if err != nil {
 		return &Response{code: 500, err: fmt.Sprintf("error getting last scan time: %v", err)}
@@ -74,6 +82,12 @@ func (c *Controller) ServeHome(r *http.Request) *Response {
 	if tStr != "" {
 		i, _ := strconv.ParseInt(tStr, 10, 64)
 		data.LastScanTime = time.Unix(i, 0)
+	}
+	if data.ScanSchedule.Enabled {
+		next := scanner.NextRun(time.Now(), c.scanner.LastScheduledScanTime(), data.ScanSchedule.Days, data.ScanSchedule.Time)
+		if !next.IsZero() {
+			data.NextScanRun = next.Format("Mon Jan 02, 15:04")
+		}
 	}
 
 	// transcoding box
@@ -708,6 +722,42 @@ func selectedUserIfAdmin(c *Controller, r *http.Request) (*db.User, error) {
 		return nil, fmt.Errorf("no user with name %q", selectedUsername)
 	}
 	return selectedUser, nil
+}
+
+func (c *Controller) ServeUpdateScanScheduleDo(r *http.Request) *Response {
+	enabled := r.FormValue("enabled") == "1"
+	days, err := strconv.Atoi(r.FormValue("days"))
+	clock, clockErr := scanner.ParseClock(r.FormValue("time"))
+	if !enabled && (err != nil || clockErr != nil) {
+		// days/time fields are disabled when the schedule is off, so their
+		// values may be absent; fall back to the currently saved ones
+		if existing, schedErr := c.scanner.Schedule(); schedErr == nil {
+			days, clock = existing.Days, existing.Time
+			err, clockErr = nil, nil
+		}
+	}
+	if err != nil || days < 1 || days > 30 {
+		return &Response{
+			redirect: "/admin/home",
+			flashW:   []string{"please provide a schedule interval between 1 and 30 days"},
+		}
+	}
+	if clockErr != nil {
+		return &Response{
+			redirect: "/admin/home",
+			flashW:   []string{"please provide a schedule time in HH:MM format"},
+		}
+	}
+	if err := c.scanner.SetSchedule(&scanner.ScanSchedule{Enabled: enabled, Days: days, Time: clock}); err != nil {
+		return &Response{
+			redirect: "/admin/home",
+			flashW:   []string{fmt.Sprintf("could not save schedule: %v", err)},
+		}
+	}
+	return &Response{
+		redirect: "/admin/home",
+		flashN:   []string{"scan schedule updated"},
+	}
 }
 
 func doScan(scanner *scanner.Scanner, opts scanner.ScanOptions) {

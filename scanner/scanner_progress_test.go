@@ -41,3 +41,23 @@ func TestFoldersProcessedWithExcludePattern(t *testing.T) {
 
 	assert.Less(t, excluded, unrestricted.Scanner().FoldersProcessed())
 }
+
+func TestScheduleRoundTrip(t *testing.T) {
+	t.Parallel()
+	m := mockfs.New(t)
+	m.AddItems()
+	s := m.Scanner()
+
+	schedule, err := s.Schedule()
+	require.NoError(t, err)
+	assert.False(t, schedule.Enabled)
+	assert.Equal(t, 1, schedule.Days)
+	assert.Equal(t, scanner.Clock{Hour: 4, Minute: 30}, schedule.Time)
+
+	schedule = &scanner.ScanSchedule{Enabled: true, Days: 3, Time: scanner.Clock{Hour: 22, Minute: 15}}
+	require.NoError(t, s.SetSchedule(schedule))
+
+	saved, err := s.Schedule()
+	require.NoError(t, err)
+	assert.Equal(t, schedule, saved)
+}

@@ -195,6 +195,14 @@ const (
 	LastFMAPIKey SettingKey = "lastfm_api_key" //nolint:gosec
 	LastFMSecret SettingKey = "lastfm_secret"
 	LastScanTime SettingKey = "last_scan_time"
+
+	ScanScheduleEnabled SettingKey = "scan_schedule_enabled"
+	ScanScheduleDays    SettingKey = "scan_schedule_days"
+	ScanScheduleTime    SettingKey = "scan_schedule_time"
+
+	// LastScheduledScanTime is only set by scans started by the schedule,
+	// so manual scans can never postpone a scheduled run.
+	LastScheduledScanTime SettingKey = "last_scheduled_scan_time"
 )
 
 func (db *DB) GetSetting(key SettingKey) (string, error) {
