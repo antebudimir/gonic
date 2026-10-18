@@ -43,6 +43,7 @@ type Scanner struct {
 	scanEmbeddedCover  bool
 	genreTree          map[string][]string
 	scanning           *int32
+	foldersProcessed   *int32
 }
 
 func New(musicDirs []string, db *db.DB, multiValueSettings map[*tags.Spec]tags.MultiValueSetting, tagReader tags.Reader, excludePattern string, scanEmbeddedCover bool, genreTree map[string][]string) *Scanner {
@@ -60,12 +61,15 @@ func New(musicDirs []string, db *db.DB, multiValueSettings map[*tags.Spec]tags.M
 		scanEmbeddedCover:  scanEmbeddedCover,
 		genreTree:          genreTree,
 		scanning:           new(int32),
+		foldersProcessed:   new(int32),
 	}
 }
 
 func (s *Scanner) IsScanning() bool    { return atomic.LoadInt32(s.scanning) == 1 }
 func (s *Scanner) StartScanning() bool { return atomic.CompareAndSwapInt32(s.scanning, 0, 1) }
 func (s *Scanner) StopScanning()       { atomic.StoreInt32(s.scanning, 0) }
+
+func (s *Scanner) FoldersProcessed() int { return int(atomic.LoadInt32(s.foldersProcessed)) }
 
 type ScanOptions struct {
 	IsFull bool
@@ -78,6 +82,7 @@ func (s *Scanner) ScanAndClean(opts ScanOptions) (*State, error) {
 	defer s.StopScanning()
 
 	start := time.Now()
+	atomic.StoreInt32(s.foldersProcessed, 0)
 	st := &State{
 		seenTracks: map[int]struct{}{},
 		seenAlbums: map[int]struct{}{},
@@ -260,8 +265,10 @@ func (s *Scanner) scanCallback(st *State, absPath string, d fs.DirEntry, err err
 
 	if err := s.scanDir(st, absPath); err != nil {
 		st.errs = append(st.errs, fmt.Errorf("%q: %w", absPath, err))
+		atomic.AddInt32(s.foldersProcessed, 1)
 		return nil
 	}
+	atomic.AddInt32(s.foldersProcessed, 1)
 
 	return nil
 }

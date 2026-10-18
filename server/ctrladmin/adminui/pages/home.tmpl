@@ -75,8 +75,36 @@
                 <input type="submit" title="start a slow scan. gonic will not check the timestamps of changed files. you generally shouldn't need this" value="scan slow (i)">
             </form>
         {{ end }}
-        {{ if .IsScanning }}<p class="text-green-500 col-span-full">scan in progress...</p>{{ end }}
+        <div id="scan-status" class="text-green-500 col-span-full" style="{{ if not .IsScanning }}display:none;{{ end }}"></div>
     </div>
+    <script>
+        (() => {
+            const el = document.getElementById('scan-status');
+            let sawScanning = {{ if .IsScanning }}true{{ else }}false{{ end }};
+            const initialLastScan = {{ if not .LastScanTime.IsZero }}{{ .LastScanTime.Unix }}{{ else }}0{{ end }};
+            const poll = async () => {
+                try {
+                    const resp = await fetch({{ path "/admin/scan_status" }}, {headers: {accept: 'application/json'}});
+                    if (!resp.ok) return;
+                    const status = await resp.json();
+                    if (status.isScanning) {
+                        sawScanning = true;
+                        el.style.display = '';
+                        el.textContent = `scan in progress... (${status.foldersProcessed} folders processed)`;
+                        return;
+                    }
+                    // reload when a scan finished that we saw running, or when
+                    // the last scan time changed since page load (catches
+                    // scans short enough to start and finish between polls)
+                    if (sawScanning || (status.lastScanTime || 0) !== initialLastScan) {
+                        location.reload();
+                    }
+                } catch {}
+            };
+            poll();
+            setInterval(poll, 2000);
+        })();
+    </script>
 {{ end }}
 
 {{ component "block" (props .

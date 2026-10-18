@@ -85,6 +85,7 @@ func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts
 
 	// user routes (if session is valid)
 	c.Handle("GET /logout", userChain(respRaw(c.ServeLogout)))
+	c.Handle("GET /scan_status", userChain(respRaw(c.ServeScanStatus)))
 	c.Handle("GET /home", userChain(resp(c.ServeHome)))
 	c.Handle("GET /change_username", userChain(resp(c.ServeChangeUsername)))
 	c.Handle("POST /change_username_do", userChain(resp(c.ServeChangeUsernameDo)))

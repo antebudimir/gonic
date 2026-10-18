@@ -82,9 +82,10 @@ func newMockFS(tb testing.TB, dirs []string, excludePattern string) *MockFS {
 	}
 }
 
-func (m *MockFS) DB() *db.DB             { return m.db }
-func (m *MockFS) TmpDir() string         { return m.dir }
-func (m *MockFS) TagReader() tags.Reader { return m.tagReader }
+func (m *MockFS) DB() *db.DB                { return m.db }
+func (m *MockFS) TmpDir() string            { return m.dir }
+func (m *MockFS) TagReader() tags.Reader    { return m.tagReader }
+func (m *MockFS) Scanner() *scanner.Scanner { return m.scanner }
 
 func (m *MockFS) ScanAndClean() *scanner.State {
 	m.t.Helper()

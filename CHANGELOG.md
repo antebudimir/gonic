@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.0-fork.1](https://www.github.com/antebudimir/gonic/compare/v0.22.0...v0.22.0-fork.1) (2026-10-19)
+
+
+### Features
+
+* **admin:** live scan status polling on the home page
+
+
 ## [0.22.0](https://www.github.com/sentriz/gonic/compare/v0.21.0...v0.22.0) (2026-06-08)
 
 
