@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.0-fork.4](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.3...v0.22.0-fork.4) (2026-10-19)
+
+
+### Features
+
+* **admin:** transcode cache visibility and on-demand ejection
+
+
 ## [0.22.0-fork.3](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.2...v0.22.0-fork.3) (2026-10-19)
 
 

@@ -157,6 +157,28 @@
     </div>
 
     <div class="text-left pt-3">
+        <div class="text-gray-900 font-bold">transcode cache</div>
+        {{ if .TranscodeCacheLimitMB }}
+            <div class="font-medium text-gray-500">currently using <span class="italic">{{ .TranscodeCacheUsage }}</span> of a {{ .TranscodeCacheLimitMB }} MB limit</div>
+        {{ else }}
+            <div class="font-medium text-gray-500">currently using <span class="italic">{{ .TranscodeCacheUsage }}</span>. no size limit is configured, so the cache will grow unbounded. set <span class="italic text-gray-800">GONIC_TRANSCODE_EJECT_INTERVAL</span> to cap it automatically, or a size below</div>
+        {{ end }}
+        {{ if .User.IsAdmin }}
+        <form class="flex gap-2 items-center pt-1" action="{{ path "/admin/update_transcode_cache_size_do" }}" method="post">
+            <input type="number" name="size_mb" min="0" value="{{ .TranscodeCacheLimitMB }}" title="cache size limit in MB (0 = no limit)">
+            <input type="submit" value="save">
+        </form>
+        {{ end }}
+    </div>
+    {{ if and .User.IsAdmin .TranscodeCacheLimitMB }}
+    <div class="flex justify-end pt-1">
+        <form class="contents" action="{{ path "/admin/eject_transcode_cache_do" }}" method="post">
+            <input type="submit" value="eject now">
+        </form>
+    </div>
+    {{ end }}
+
+    <div class="text-left pt-3">
         <div class="text-gray-900 font-bold">per-client overrides</div>
         <div class="font-medium text-gray-500">force a profile for a specific client (mainly for legacy clients). seeking may not work. client names are in the gonic logs. use <span class="italic text-gray-800">*</span> as a catch-all</div>
     </div>

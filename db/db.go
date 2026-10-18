@@ -203,6 +203,10 @@ const (
 	// LastScheduledScanTime is only set by scans started by the schedule,
 	// so manual scans can never postpone a scheduled run.
 	LastScheduledScanTime SettingKey = "last_scheduled_scan_time"
+
+	// TranscodeCacheSizeMB overrides -transcode-cache-size at runtime when
+	// set. 0 means no limit.
+	TranscodeCacheSizeMB SettingKey = "transcode_cache_size_mb"
 )
 
 func (db *DB) GetSetting(key SettingKey) (string, error) {

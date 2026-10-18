@@ -24,6 +24,21 @@ func New(path string, limitMB int) *DirCache {
 
 func (c *DirCache) Path() string { return c.path }
 
+// LimitMB returns the currently configured size limit. safe for concurrent
+// use with SetLimitMB and Eject.
+func (c *DirCache) LimitMB() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.limitMB
+}
+
+// SetLimitMB updates the size limit on a live cache. safe for concurrent use.
+func (c *DirCache) SetLimitMB(limitMB int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.limitMB = limitMB
+}
+
 func (c *DirCache) RLock()   { c.mu.RLock() }
 func (c *DirCache) RUnlock() { c.mu.RUnlock() }
 
@@ -31,6 +46,9 @@ func (c *DirCache) RUnlock() { c.mu.RUnlock() }
 // size limit. It holds a write lock for its duration, blocking concurrent
 // reads.
 func (c *DirCache) Eject() error {
+	if c.limitMB <= 0 {
+		return nil // 0 means no limit
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -74,4 +92,30 @@ func (c *DirCache) Eject() error {
 	}
 
 	return nil
+}
+
+// Usage walks the cache directory and reports the number of files and the
+// total bytes they occupy.
+func (c *DirCache) Usage() (files int, bytes int64, err error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	err = filepath.WalkDir(c.path, func(_ string, de fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !de.IsDir() {
+			info, err := de.Info()
+			if err != nil {
+				return fmt.Errorf("stat cache file: %w", err)
+			}
+			files++
+			bytes += info.Size()
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, 0, fmt.Errorf("walk cache path for usage: %w", err)
+	}
+	return files, bytes, nil
 }

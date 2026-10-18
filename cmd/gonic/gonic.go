@@ -16,6 +16,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -224,7 +225,15 @@ func main() {
 	userAgent := fmt.Sprintf("%s/%s", gonic.Name, gonic.Version)
 
 	podcast := podcast.New(dbc, *confPodcastPath, tagReader, userAgent)
-	transcodeCache := cache.New(cacheDirAudio, *confTranscodeCacheSize)
+	transcodeCacheSize := *confTranscodeCacheSize
+	if v, err := dbc.GetSetting(db.TranscodeCacheSizeMB); err != nil {
+		log.Panicf("error getting transcode cache size setting: %v\n", err)
+	} else if v != "" {
+		if i, err := strconv.Atoi(v); err == nil && i >= 0 {
+			transcodeCacheSize = i
+		}
+	}
+	transcodeCache := cache.New(cacheDirAudio, transcodeCacheSize)
 	transcoder := transcode.NewCachingTranscoder(transcode.NewFFmpegTranscoder(), transcodeCache)
 
 	lastfmClientKeySecretFunc := func() (string, string, error) {
@@ -275,7 +284,7 @@ func main() {
 		return url.String()
 	}
 
-	ctrlAdmin, err := ctrladmin.New(dbc, sessDB, scannr, podcast, lastfmClient, resolveProxyPath)
+	ctrlAdmin, err := ctrladmin.New(dbc, sessDB, scannr, podcast, lastfmClient, transcodeCache, resolveProxyPath)
 	if err != nil {
 		log.Panicf("error creating admin controller: %v\n", err)
 	}
@@ -439,13 +448,18 @@ func main() {
 	})
 
 	errgrp.Go(func() error {
-		if *confTranscodeEjectInterval == 0 || *confTranscodeCacheSize == 0 {
+		if *confTranscodeEjectInterval == 0 {
 			return nil
 		}
 
 		defer logJob("transcode cache eject")()
 
 		ctxTick(ctx, time.Duration(*confTranscodeEjectInterval)*time.Minute, func() {
+			// limit may be changed at runtime from the UI; only eject when
+			// a limit is currently configured
+			if transcodeCache.LimitMB() == 0 {
+				return
+			}
 			if err := transcodeCache.Eject(); err != nil {
 				log.Printf("error ejecting transcode cache: %v", err)
 			}
@@ -481,6 +495,12 @@ func main() {
 			}
 		})
 		return nil
+	})
+
+	errgrp.Go(func() error {
+		defer logJob("scan schedule")()
+
+		return scannr.ExecuteSchedule(ctx)
 	})
 
 	errgrp.Go(func() error {

@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/nfnt/resize"
 
 	"go.senan.xyz/gonic/db"
@@ -92,6 +93,16 @@ func (c *Controller) ServeHome(r *http.Request) *Response {
 	}
 
 	// transcoding box
+	if user.IsAdmin && c.transcodeCache != nil {
+		_, cacheBytes, err := c.transcodeCache.Usage()
+		if err != nil {
+			return &Response{code: 500, err: fmt.Sprintf("error measuring transcode cache usage: %v", err)}
+		}
+		data.TranscodeCacheUsage = humanize.Bytes(uint64(cacheBytes))
+		data.TranscodeCacheLimitMB = c.transcodeCache.LimitMB()
+	}
+
+	// transcoding preferences box
 	err = c.dbc.
 		Where("user_id=?", user.ID).
 		Find(&data.TranscodePreferences).
@@ -806,6 +817,46 @@ func (c *Controller) ServeUpdateScanScheduleDo(r *http.Request) *Response {
 	return &Response{
 		redirect: "/admin/home",
 		flashN:   []string{"scan schedule updated"},
+	}
+}
+
+func (c *Controller) ServeTranscodeCacheEjectDo(_ *http.Request) *Response {
+	go func() {
+		if err := c.transcodeCache.Eject(); err != nil {
+			log.Printf("error ejecting transcode cache: %v", err)
+		}
+	}()
+	return &Response{
+		redirect: "/admin/home",
+		flashN:   []string{"transcode cache ejection started"},
+	}
+}
+
+func (c *Controller) ServeUpdateTranscodeCacheSizeDo(r *http.Request) *Response {
+	mb, err := strconv.Atoi(r.PostFormValue("size_mb"))
+	if err != nil || mb < 0 {
+		return &Response{
+			redirect: "/admin/home",
+			flashW:   []string{"please provide a cache size in MB (0 = no limit)"},
+		}
+	}
+	if c.transcodeCache != nil {
+		if mb < c.transcodeCache.LimitMB() {
+			go func() {
+				if err := c.transcodeCache.Eject(); err != nil {
+					log.Printf("error ejecting transcode cache: %v", err)
+				}
+			}()
+		}
+		c.transcodeCache.SetLimitMB(mb)
+	}
+	if err := c.dbc.SetSetting(db.TranscodeCacheSizeMB, strconv.Itoa(mb)); err != nil {
+		return &Response{code: 500, err: fmt.Sprintf("error setting transcode cache size: %v", err)}
+	}
+	desc := map[bool]string{true: "no limit", false: fmt.Sprintf("%d MB", mb)}[mb == 0]
+	return &Response{
+		redirect: "/admin/home",
+		flashN:   []string{"transcode cache size set to " + desc},
 	}
 }
 

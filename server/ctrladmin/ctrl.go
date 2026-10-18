@@ -24,6 +24,7 @@ import (
 	"github.com/sentriz/gormstore"
 
 	"go.senan.xyz/gonic"
+	"go.senan.xyz/gonic/cache"
 	"go.senan.xyz/gonic/db"
 	"go.senan.xyz/gonic/handlerutil"
 	"go.senan.xyz/gonic/lastfm"
@@ -48,12 +49,13 @@ type Controller struct {
 	scanner          *scanner.Scanner
 	podcasts         *podcast.Podcasts
 	lastfmClient     *lastfm.Client
+	transcodeCache   *cache.DirCache
 	resolveProxyPath ProxyPathResolver
 }
 
 type ProxyPathResolver func(in string) string
 
-func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts *podcast.Podcasts, lastfmClient *lastfm.Client, resolveProxyPath ProxyPathResolver) (*Controller, error) {
+func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts *podcast.Podcasts, lastfmClient *lastfm.Client, transcodeCache *cache.DirCache, resolveProxyPath ProxyPathResolver) (*Controller, error) {
 	c := Controller{
 		ServeMux: http.NewServeMux(),
 
@@ -62,6 +64,7 @@ func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts
 		scanner:          scanner,
 		podcasts:         podcasts,
 		lastfmClient:     lastfmClient,
+		transcodeCache:   transcodeCache,
 		resolveProxyPath: resolveProxyPath,
 	}
 
@@ -115,6 +118,8 @@ func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts
 	c.Handle("POST /start_scan_inc_do", adminChain(resp(c.ServeStartScanIncDo)))
 	c.Handle("POST /start_scan_full_do", adminChain(resp(c.ServeStartScanFullDo)))
 	c.Handle("POST /update_scan_schedule_do", adminChain(resp(c.ServeUpdateScanScheduleDo)))
+	c.Handle("POST /eject_transcode_cache_do", adminChain(resp(c.ServeTranscodeCacheEjectDo)))
+	c.Handle("POST /update_transcode_cache_size_do", adminChain(resp(c.ServeUpdateTranscodeCacheSizeDo)))
 	c.Handle("POST /add_podcast_do", adminChain(resp(c.ServePodcastAddDo)))
 	c.Handle("POST /import_podcasts_opml_do", adminChain(resp(c.ServePodcastImportOPMLDo)))
 	c.Handle("POST /delete_podcast_do", adminChain(resp(c.ServePodcastDeleteDo)))
@@ -297,6 +302,9 @@ type templateData struct {
 	ScanSchedule            *scanner.ScanSchedule
 	ScanScheduleDaysOptions []int
 	NextScanRun             string
+
+	TranscodeCacheUsage        string
+	TranscodeCacheLimitMB      int
 	TranscodePreferences       []*db.TranscodePreference
 	TranscodeFormatPreferences []*db.TranscodeFormatPreference
 	TranscodeProfiles          map[string]transcode.Profile
