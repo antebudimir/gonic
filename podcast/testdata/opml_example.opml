@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="1.0">
+	<head>
+		<title>my podcasts</title>
+	</head>
+	<body>
+		<outline text="news">
+			<outline type="rss" text="a news podcast" xmlUrl="https://example.com/news.xml"/>
+			<outline type="rss" text="another news podcast" xmlUrl="https://example.com/news-2.xml"/>
+		</outline>
+		<outline text="comedy">
+			<outline text="nested grouping">
+				<outline type="rss" text="a comedy podcast" xmlUrl="https://example.com/comedy.xml"/>
+			</outline>
+		</outline>
+		<outline type="rss" text="a loose podcast" xmlUrl="https://example.com/loose.xml"/>
+		<outline text="just a grouping"/>
+	</body>
+</opml>

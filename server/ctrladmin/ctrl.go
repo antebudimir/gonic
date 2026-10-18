@@ -116,6 +116,7 @@ func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts
 	c.Handle("POST /start_scan_full_do", adminChain(resp(c.ServeStartScanFullDo)))
 	c.Handle("POST /update_scan_schedule_do", adminChain(resp(c.ServeUpdateScanScheduleDo)))
 	c.Handle("POST /add_podcast_do", adminChain(resp(c.ServePodcastAddDo)))
+	c.Handle("POST /import_podcasts_opml_do", adminChain(resp(c.ServePodcastImportOPMLDo)))
 	c.Handle("POST /delete_podcast_do", adminChain(resp(c.ServePodcastDeleteDo)))
 	c.Handle("POST /download_podcast_do", adminChain(resp(c.ServePodcastDownloadDo)))
 	c.Handle("POST /update_podcast_do", adminChain(resp(c.ServePodcastUpdateDo)))

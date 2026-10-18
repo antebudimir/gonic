@@ -17,6 +17,7 @@ import (
 	"go.senan.xyz/gonic/db"
 	"go.senan.xyz/gonic/handlerutil"
 	"go.senan.xyz/gonic/listenbrainz"
+	"go.senan.xyz/gonic/podcast"
 	"go.senan.xyz/gonic/scanner"
 	"go.senan.xyz/gonic/transcode"
 )
@@ -525,6 +526,54 @@ func (c *Controller) ServePodcastAddDo(r *http.Request) *Response {
 	return &Response{
 		redirect: "/admin/home",
 	}
+}
+
+func (c *Controller) ServePodcastImportOPMLDo(r *http.Request) *Response {
+	file, _, err := r.FormFile("opml")
+	if err != nil {
+		return &Response{
+			redirect: "/admin/home",
+			flashW:   []string{"please choose an OPML file to import"},
+		}
+	}
+	defer file.Close()
+
+	feedURLs, err := podcast.ParseOPML(file)
+	if err != nil {
+		return &Response{
+			redirect: "/admin/home",
+			flashW:   []string{fmt.Sprintf("could not parse OPML file: %v", err)},
+		}
+	}
+	if len(feedURLs) == 0 {
+		return &Response{
+			redirect: "/admin/home",
+			flashW:   []string{"no podcast feeds found in OPML file"},
+		}
+	}
+
+	var added, failed int
+	for _, feedURL := range feedURLs {
+		feed, err := c.podcasts.ParseFeed(feedURL)
+		if err != nil {
+			failed++
+			log.Printf("error importing podcast feed %q: %v", feedURL, err)
+			continue
+		}
+		if _, err := c.podcasts.AddNewPodcast(feedURL, feed); err != nil {
+			failed++
+			log.Printf("error importing podcast feed %q: %v", feedURL, err)
+			continue
+		}
+		added++
+	}
+
+	flash := []string{fmt.Sprintf("imported %d of %d podcasts from OPML", added, len(feedURLs))}
+	resp := &Response{redirect: "/admin/home", flashN: flash}
+	if failed > 0 {
+		resp.flashW = []string{fmt.Sprintf("%d feeds failed to import, see logs for details", failed)}
+	}
+	return resp
 }
 
 func (c *Controller) ServePodcastDownloadDo(r *http.Request) *Response {

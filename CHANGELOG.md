@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.22.0-fork.3](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.2...v0.22.0-fork.3) (2026-10-19)
+
+
+### Features
+
+* **admin:** import podcasts from OPML file
+
+* **admin:** align OPML import form with the podcasts grid
+
+
 ## [0.22.0-fork.2](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.1...v0.22.0-fork.2) (2026-10-19)
 
 
