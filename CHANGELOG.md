@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.0-fork.6](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.5...v0.22.0-fork.6) (2026-10-19)
+
+
+### Others
+
+* **admin:** update gonic logo for dark theme
+
+
 ## [0.22.0-fork.5](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.4...v0.22.0-fork.5) (2026-10-19)
 
 
