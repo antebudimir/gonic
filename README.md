@@ -1,3 +1,6 @@
+> **⚠️ Fork Notice**: This is a fork of the original [Gonic](https://github.com/sentriz/gonic) project. I created this fork primarily to improve my admin UX (added dark admin UI, OPML podcast import, configurable auto-scan scheduling, live scan status, and transcode cache management in the UI). While I'll try to keep this fork in sync with the original repo, that's not the primary focus. I appreciate sentriz for making Gonic in the first place ❤️, but while upstream ships regular releases, community PRs (especially larger feature ones) have been waiting for years. I'll continue to implement feats I find useful for my use case & fix any obvious bugs I encounter, but for full support and the most up-to-date version, please use the original repository.
+>
+
 <p align="center"><img width="500" src="https://github.com/sentriz/gonic/blob/master/.github/logo.png?raw=true"></p>
 <h4 align="center">free-software <a href="http://www.subsonic.org/">subsonic</a> server API implementation, supporting its <a href="https://github.com/sentriz/gonic?tab=readme-ov-file#features">many clients</a></h4>
 <p align="center">
