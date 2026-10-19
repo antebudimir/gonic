@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.0-fork.5](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.4...v0.22.0-fork.5) (2026-10-19)
+
+
+### Styles
+
+* **admin:** replace light theme with a dark one
+
+
 ## [0.22.0-fork.4](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.3...v0.22.0-fork.4) (2026-10-19)
 
 

@@ -19,6 +19,10 @@ a {
   @apply text-blue-500;
 }
 
+body {
+  background-color: rgb(2, 26, 26);
+}
+
 input[type],
 select {
   @apply h-6 px-2 leading-[1.5] w-full min-w-[3rem] md:min-w-[8rem] box-border bg-white text-gray-600 shadow-none border-0 outline outline-1 outline-gray-400/50 cursor-pointer overflow-hidden whitespace-nowrap text-ellipsis;
@@ -26,8 +30,56 @@ select {
 
 input[type="button"],
 input[type="submit"] {
-  @apply text-center w-[6rem] md:w-[8rem] font-bold;
+  @apply text-center leading-5 w-[6rem] md:w-[8rem] font-black;
+  border: 2px solid rgba(255, 142, 83, 0.4);
+  border-radius: 0.3rem 0.5rem;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 142, 83, 0.15),
+    rgba(255, 107, 107, 0.15)
+  );
+  color: rgb(255, 142, 83);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(255, 142, 83, 0.15);
 }
+
+input[type="file"] {
+  @apply w-auto h-auto p-0 bg-transparent text-transparent outline-none border-0 shadow-none;
+}
+
+input[type="file"]::file-selector-button {
+  @apply mr-3 h-7 px-4 leading-5 font-black cursor-pointer border-0;
+  border-radius: 0.3rem 0.5rem;
+  background: rgb(255, 142, 83);
+  color: rgb(2, 26, 26);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="file"]:hover::file-selector-button,
+input[type="file"]:focus::file-selector-button {
+  background: rgb(255, 165, 110);
+  box-shadow:
+    0 6px 20px rgba(255, 142, 83, 0.3),
+    0 0 20px rgba(255, 142, 83, 0.2);
+  color: rgb(2, 26, 26);
+}
+
+input[type="button"]:hover,
+input[type="button"]:focus,
+input[type="submit"]:hover,
+input[type="submit"]:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 142, 83, 0.25),
+    rgba(255, 107, 107, 0.25)
+  );
+  border-color: rgba(255, 142, 83, 0.7);
+  color: rgb(255, 255, 255);
+  box-shadow:
+    0 6px 20px rgba(255, 142, 83, 0.3),
+    0 0 20px rgba(255, 142, 83, 0.2);
+}
+
 
 input[type]:disabled,
 select:disabled {
@@ -35,7 +87,6 @@ select:disabled {
   outline-color: rgba(255, 142, 83, 0.15);
   color: rgb(130, 140, 140);
 }
-
 
 .ellipsis {
   @apply max-w-full overflow-hidden text-ellipsis whitespace-nowrap;
