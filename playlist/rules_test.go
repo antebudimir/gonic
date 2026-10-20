@@ -1,0 +1,49 @@
+package playlist_test
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+	"go.senan.xyz/gonic/playlist"
+)
+
+func TestRulesRoundTrip(t *testing.T) {
+	t.Parallel()
+	rules := &playlist.Rules{
+		Genre: "Jazz", FromYear: 1960, ToYear: 1979,
+		MinRating: 4, Starred: true, MinPlays: 5,
+		Sort: "random", Limit: 50,
+	}
+	encoded := rules.String()
+
+	store, err := playlist.NewStore(t.TempDir())
+	require.NoError(t, err)
+	require.NoError(t, store.Write("1", &playlist.Playlist{
+		UserID: 1, Name: "smart", Rules: encoded,
+		Items: []string{"/music/a.flac"},
+	}))
+
+	read, err := store.Read("1")
+	require.NoError(t, err)
+	require.Equal(t, encoded, read.Rules)
+
+	parsed, err := playlist.ParseRules(read.Rules)
+	require.NoError(t, err)
+	require.Equal(t, rules, parsed)
+}
+
+func TestParseRules(t *testing.T) {
+	t.Parallel()
+	nil, err := playlist.ParseRules("")
+	require.NoError(t, err)
+	require.Nil(t, nil)
+
+	_, err = playlist.ParseRules("{bad json")
+	require.Error(t, err)
+
+	_, err = playlist.ParseRules(`{"sort":"nope"}`)
+	require.Error(t, err)
+
+	_, err = playlist.ParseRules(`{"minRating":9}`)
+	require.Error(t, err)
+}

@@ -32,6 +32,7 @@ type Playlist struct {
 	Name      string
 	Comment   string
 	Items     []string
+	Rules     string
 	IsPublic  bool
 }
 
@@ -135,6 +136,8 @@ func (s *Store) Read(relPath string) (*Playlist, error) {
 			playlist.Name = value
 		case attrCommment:
 			playlist.Comment = value
+		case attrRules:
+			playlist.Rules = value
 		case attrIsPublic:
 			playlist.IsPublic, _ = strconv.ParseBool(value)
 		}
@@ -198,6 +201,9 @@ func (s *Store) Write(relPath string, playlist *Playlist) error {
 	fmt.Fprintln(file, encodeAttr(attrName, playlist.Name))
 	fmt.Fprintln(file, encodeAttr(attrCommment, playlist.Comment))
 	fmt.Fprintln(file, encodeAttr(attrIsPublic, fmt.Sprint(playlist.IsPublic)))
+	if playlist.Rules != "" {
+		fmt.Fprintln(file, encodeAttr(attrRules, playlist.Rules))
+	}
 	for _, line := range playlist.Items {
 		if rel, err := filepath.Rel(filepath.Dir(absPath), line); err == nil {
 			line = rel
@@ -265,6 +271,7 @@ const (
 	attrName     = "NAME"
 	attrCommment = "COMMENT"
 	attrIsPublic = "IS-PUBLIC"
+	attrRules    = "RULES"
 )
 
 func encodeAttr(name, value string) string {
