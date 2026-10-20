@@ -247,3 +247,74 @@ func writePrivatePlaylist(t *testing.T, f *fixture) string {
 	}
 	return playlistIDEncode(relPath).String()
 }
+
+func TestSmartPlaylist(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+
+	rules := &playlistp.Rules{
+		Genre: "Rock",
+		Sort:  "title",
+		Limit: 10,
+	}
+	stablePath := filepath.Join("1", "smart.m3u")
+	if err := f.contr.playlistStore.Write(stablePath, &playlistp.Playlist{
+		UserID: f.admin.ID,
+		Name:   "smart-rock",
+		Rules:  rules.String(),
+	}); err != nil {
+		t.Fatalf("write smart playlist: %v", err)
+	}
+	pinPlaylistTimes(t, f)
+
+	stableID := playlistIDEncode(stablePath).String()
+	f.run(t, f.contr.ServeGetPlaylist, f.admin,
+		query{url.Values{"id": {stableID}}, "smart_playlist", false},
+	)
+
+	// genre+year+rating filters and limit behave as expected
+	rows, err := smartPlaylistTrackRows(f.contr, f.admin.ID, &playlistp.Rules{
+		Genre: "Jazz", Limit: 1,
+	})
+	if err != nil {
+		t.Fatalf("smart rows: %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 jazz track, got %d", len(rows))
+	}
+
+	rows, err = smartPlaylistTrackRows(f.contr, f.admin.ID, &playlistp.Rules{
+		FromYear: 2019, ToYear: 2019, Sort: "title",
+	})
+	if err != nil {
+		t.Fatalf("smart rows: %v", err)
+	}
+	if len(rows) == 0 {
+		t.Fatal("expected some 2019 tracks")
+	}
+	for _, row := range rows {
+		if row.TagYear != 2019 {
+			t.Fatalf("expected year 2019, got %d", row.TagYear)
+		}
+	}
+
+	// starred filter matches any user's star (admin starred one track)
+	rows, err = smartPlaylistTrackRows(f.contr, f.alt.ID, &playlistp.Rules{Starred: true})
+	if err != nil {
+		t.Fatalf("smart rows: %v", err)
+	}
+	if len(rows) != 1 || rows[0].ID != f.trackAB1.ID {
+		t.Fatalf("expected exactly the admin-starred track, got %d rows", len(rows))
+	}
+
+	// broken rules bubble up as render errors
+	if err := f.contr.playlistStore.Write(stablePath, &playlistp.Playlist{
+		UserID: f.admin.ID, Name: "smart-broken", Rules: `{"sort":"nope"}`,
+	}); err != nil {
+		t.Fatalf("write broken playlist: %v", err)
+	}
+	body := f.query(t, f.contr.ServeGetPlaylist, f.admin, url.Values{"id": {stableID}})
+	if !strings.Contains(body, "parse playlist rules") {
+		t.Fatalf("expected rules parse error, got: %s", body)
+	}
+}

@@ -2,6 +2,7 @@ package ctrlshare
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -30,7 +31,7 @@ func newTestDB(t *testing.T) *db.DB {
 	return dbc
 }
 
-func seedShare(t *testing.T, dbc *db.DB) (*db.User, *db.Share, *db.Track) {
+func seedShare(t *testing.T, dbc *db.DB) (*db.User, *db.Share, *db.Album, *db.Track) {
 	t.Helper()
 	user := &db.User{Name: "admin", Password: "pw", IsAdmin: true}
 	if err := dbc.Create(user).Error; err != nil {
@@ -51,13 +52,13 @@ func seedShare(t *testing.T, dbc *db.DB) (*db.User, *db.Share, *db.Track) {
 	if err := dbc.Create(share).Error; err != nil {
 		t.Fatalf("create share: %v", err)
 	}
-	return user, share, track
+	return user, share, album, track
 }
 
 func TestLandingAndGuards(t *testing.T) {
 	t.Parallel()
 	dbc := newTestDB(t)
-	_, share, track := seedShare(t, dbc)
+	user, share, album, track := seedShare(t, dbc)
 	c := New(dbc, nil) // subsonic delegation is covered by handler tests in ctrlsubsonic
 
 	// landing page
@@ -77,6 +78,22 @@ func TestLandingAndGuards(t *testing.T) {
 	}
 	if after.VisitCount != 1 || after.LastVisitedAt == nil {
 		t.Fatalf("visit not counted: %d %v", after.VisitCount, after.LastVisitedAt)
+	}
+
+	// an album share expands into its tracks on the landing page
+	albumShare := &db.Share{
+		Token: "albumtoken", UserID: user.ID, Downloadable: true,
+		Entries: []*db.ShareEntry{{Item: album.SID().String()}},
+	}
+	if err := dbc.Create(albumShare).Error; err != nil {
+		t.Fatalf("create album share: %v", err)
+	}
+	r = httptest.NewRequest(http.MethodGet, "/albumtoken", nil)
+	r.URL.Path = "/albumtoken"
+	w = httptest.NewRecorder()
+	c.ServeHTTP(w, r)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "id=tr-"+fmt.Sprint(track.ID)) {
+		t.Fatalf("album landing should link track tr-%d, got: %s", track.ID, w.Body.String())
 	}
 
 	// stream of a foreign entry is forbidden
@@ -116,7 +133,7 @@ func TestLandingAndGuards(t *testing.T) {
 func TestEntryAllowed(t *testing.T) {
 	t.Parallel()
 	dbc := newTestDB(t)
-	_, _, track := seedShare(t, dbc)
+	_, _, _, track := seedShare(t, dbc)
 
 	entries := []specid.ID{*track.SID()}
 	if !entryAllowed(dbc, entries, *track.SID()) {

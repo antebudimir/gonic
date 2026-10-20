@@ -167,14 +167,21 @@ func shareItems(dbc *db.DB, entries []specid.ID) []shareItem {
 				artist: tr.TagTrackArtist, album: tr.Album.TagTitle,
 			})
 		case specid.Album:
-			var album db.Album
-			if err := dbc.First(&album, id.Value).Error; err != nil {
+			// streaming only works per track, so expand the album into its tracks
+			var tracks []*db.Track
+			if err := dbc.
+				Preload("Album").
+				Where("album_id=?", id.Value).
+				Order("tag_disc_number, tag_track_number").
+				Find(&tracks).Error; err != nil {
 				continue
 			}
-			items = append(items, shareItem{
-				id: id.String(), title: album.TagTitle,
-				artist: album.TagAlbumArtist, album: album.TagTitle,
-			})
+			for _, tr := range tracks {
+				items = append(items, shareItem{
+					id: specid.ID{Type: specid.Track, Value: tr.ID}.String(), title: tr.TagTitle,
+					artist: tr.TagTrackArtist, album: tr.Album.TagTitle,
+				})
+			}
 		case specid.PodcastEpisode:
 			var pe db.PodcastEpisode
 			if err := dbc.First(&pe, id.Value).Error; err != nil {

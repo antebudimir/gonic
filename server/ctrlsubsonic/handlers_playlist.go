@@ -237,6 +237,23 @@ func playlistRender(c *Controller, params paramsp.Params, playlist *playlistp.Pl
 
 	transcodeMeta := streamGetTranscodeMeta(c.dbc, user.ID, params.GetOr("c", ""))
 
+	if rules, err := playlistp.ParseRules(playlist.Rules); err != nil {
+		return nil, fmt.Errorf("parse playlist rules: %w", err)
+	} else if rules != nil {
+		rows, err := smartPlaylistTrackRows(c, user.ID, rules)
+		if err != nil {
+			return nil, fmt.Errorf("resolve smart playlist: %w", err)
+		}
+		for _, track := range rows {
+			trch := spec.NewTrackByTags(params.GetOr("c", ""), track, track.Album)
+			trch.TranscodeMeta = transcodeMeta
+			resp.Duration += track.Length
+			resp.List = append(resp.List, trch)
+		}
+		resp.SongCount = len(resp.List)
+		return resp, nil
+	}
+
 	for _, path := range playlist.Items {
 		id, err := specidpaths.Lookup(c.dbc, MusicPaths(c.musicPaths), c.podcastsPath, path)
 		if err != nil {
