@@ -49,6 +49,7 @@ import (
 	"go.senan.xyz/gonic/scanner"
 	"go.senan.xyz/gonic/scrobble"
 	"go.senan.xyz/gonic/server/ctrladmin"
+	"go.senan.xyz/gonic/server/ctrlshare"
 	"go.senan.xyz/gonic/server/ctrlsubsonic"
 	"go.senan.xyz/gonic/server/ctrlsubsonic/spec"
 	"go.senan.xyz/gonic/tags"
@@ -293,6 +294,7 @@ func main() {
 	if err != nil {
 		log.Panicf("error creating subsonic controller: %v\n", err)
 	}
+	ctrlShare := ctrlshare.New(dbc, ctrlSubsonic)
 
 	chain := handlerutil.Chain()
 	if *confHTTPLog {
@@ -307,6 +309,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/admin/", http.StripPrefix("/admin", chain(ctrlAdmin)))
 	mux.Handle("/rest/", http.StripPrefix("/rest", chain(trim(ctrlSubsonic))))
+	mux.Handle("/share/", http.StripPrefix("/share", chain(ctrlShare)))
 	mux.Handle("/ping", chain(handlerutil.Message("ok")))
 	mux.Handle("/", chain(http.RedirectHandler(resolveProxyPath("/admin/home"), http.StatusSeeOther)))
 
