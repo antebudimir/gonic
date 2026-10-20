@@ -460,6 +460,40 @@ type TranscodeFormatPreference struct {
 	CreatedAt time.Time
 }
 
+type Share struct {
+	ID            int `gorm:"primary_key"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	Token         string `gorm:"not null; unique_index" sql:"default: null"`
+	User          *User
+	UserID        int        `sql:"default: null; type:int REFERENCES users(id) ON DELETE CASCADE"`
+	Description   string     `sql:"default: null"`
+	ExpiresAt     *time.Time `sql:"default: null"`
+	LastVisitedAt *time.Time `sql:"default: null"`
+	VisitCount    int        `sql:"default: 0"`
+	Downloadable  bool       `sql:"default: false"`
+	Entries       []*ShareEntry
+}
+
+func (s *Share) GetEntries() []specid.ID {
+	ret := make([]specid.ID, 0, len(s.Entries))
+	for _, entry := range s.Entries {
+		id, err := specid.New(entry.Item)
+		if err != nil {
+			continue
+		}
+		ret = append(ret, id)
+	}
+	return ret
+}
+
+type ShareEntry struct {
+	ID      int `gorm:"primary_key"`
+	Share   *Share
+	ShareID int    `sql:"default: null; type:int REFERENCES shares(id) ON DELETE CASCADE"`
+	Item    string `gorm:"not null" sql:"default: null"`
+}
+
 type AlbumCredit struct {
 	AlbumID    int    `gorm:"not null; unique_index:idx_album_credit" sql:"default: null; type:int REFERENCES albums(id) ON DELETE CASCADE"`
 	ArtistID   int    `gorm:"not null; unique_index:idx_album_credit; index:idx_album_credits_artist_role" sql:"default: null; type:int REFERENCES artists(id) ON DELETE CASCADE"`
