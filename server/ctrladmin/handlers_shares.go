@@ -45,7 +45,7 @@ func (c *Controller) ServeShares(r *http.Request) *Response {
 		if share.User != nil {
 			view.Owner = share.User.Name
 		}
-		if !share.LastVisitedAt.IsZero() {
+		if share.LastVisitedAt != nil {
 			view.LastVisited = *share.LastVisitedAt
 		}
 		if share.ExpiresAt != nil {
