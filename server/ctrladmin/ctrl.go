@@ -28,6 +28,7 @@ import (
 	"go.senan.xyz/gonic/db"
 	"go.senan.xyz/gonic/handlerutil"
 	"go.senan.xyz/gonic/lastfm"
+	"go.senan.xyz/gonic/playlist"
 	"go.senan.xyz/gonic/podcast"
 	"go.senan.xyz/gonic/scanner"
 	"go.senan.xyz/gonic/server/ctrladmin/adminui"
@@ -50,12 +51,13 @@ type Controller struct {
 	podcasts         *podcast.Podcasts
 	lastfmClient     *lastfm.Client
 	transcodeCache   *cache.DirCache
+	playlistStore    *playlist.Store
 	resolveProxyPath ProxyPathResolver
 }
 
 type ProxyPathResolver func(in string) string
 
-func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts *podcast.Podcasts, lastfmClient *lastfm.Client, transcodeCache *cache.DirCache, resolveProxyPath ProxyPathResolver) (*Controller, error) {
+func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts *podcast.Podcasts, lastfmClient *lastfm.Client, transcodeCache *cache.DirCache, playlistStore *playlist.Store, resolveProxyPath ProxyPathResolver) (*Controller, error) {
 	c := Controller{
 		ServeMux: http.NewServeMux(),
 
@@ -65,6 +67,7 @@ func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts
 		podcasts:         podcasts,
 		lastfmClient:     lastfmClient,
 		transcodeCache:   transcodeCache,
+		playlistStore:    playlistStore,
 		resolveProxyPath: resolveProxyPath,
 	}
 
@@ -90,6 +93,7 @@ func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts
 	c.Handle("GET /logout", userChain(respRaw(c.ServeLogout)))
 	c.Handle("GET /scan_status", userChain(respRaw(c.ServeScanStatus)))
 	c.Handle("GET /home", userChain(resp(c.ServeHome)))
+	c.Handle("GET /playlists", userChain(resp(c.ServePlaylists)))
 	c.Handle("GET /change_username", userChain(resp(c.ServeChangeUsername)))
 	c.Handle("POST /change_username_do", userChain(resp(c.ServeChangeUsernameDo)))
 	c.Handle("GET /change_password", userChain(resp(c.ServeChangePassword)))
@@ -297,6 +301,7 @@ type templateData struct {
 	RequestRoot             string
 	RecentFolders           []*db.Album
 	AllUsers                []*db.User
+	AllPlaylists            []*playlistView
 	LastScanTime            time.Time
 	IsScanning              bool
 	ScanSchedule            *scanner.ScanSchedule
