@@ -130,6 +130,156 @@ func TestLandingAndGuards(t *testing.T) {
 	}
 }
 
+func TestGuardsOnMediaRoutes(t *testing.T) {
+	// guards must hold on stream/download, not just the landing page
+	dbc := newTestDB(t)
+	_, share, _, track := seedShare(t, dbc)
+	c := New(dbc, nil) // subsonic delegation is covered by handler tests in ctrlsubsonic
+
+	// unknown token is 404 on every route
+	for _, action := range []string{"", "/stream", "/download"} {
+		r := httptest.NewRequest(http.MethodGet, "/nosuchtoken"+action, nil)
+		r.URL.Path = "/nosuchtoken" + action
+		w := httptest.NewRecorder()
+		c.ServeHTTP(w, r)
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("%s unknown token: got %d want 404", action, w.Code)
+		}
+	}
+
+	// malformed id is 400 before any delegation (missing separator, bad prefix)
+	for _, badID := range []string{"noseparator", "zz-1"} {
+		r := httptest.NewRequest(http.MethodGet, "/testtoken/stream?id="+badID, nil)
+		r.URL.Path = "/testtoken/stream"
+		r.URL.RawQuery = "id=" + badID
+		w := httptest.NewRecorder()
+		c.ServeHTTP(w, r)
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("bad id %q: got %d want 400", badID, w.Code)
+		}
+	}
+
+	// expired share is 410 on stream/download too, not just listing
+	expired := time.Now().Add(-time.Hour)
+	if err := dbc.Model(share).Update("expires_at", expired).Error; err != nil {
+		t.Fatalf("expire share: %v", err)
+	}
+	for _, action := range []string{"/stream", "/download"} {
+		r := httptest.NewRequest(http.MethodGet, "/testtoken"+action+"?id="+track.SID().String(), nil)
+		r.URL.Path = "/testtoken" + action
+		r.URL.RawQuery = "id=" + track.SID().String()
+		w := httptest.NewRecorder()
+		c.ServeHTTP(w, r)
+		if w.Code != http.StatusGone {
+			t.Fatalf("%s expired: got %d want 410", action, w.Code)
+		}
+	}
+}
+
+func TestPodcastEpisodeShare(t *testing.T) {
+	dbc := newTestDB(t)
+	if err := dbc.AutoMigrate(db.Podcast{}, db.PodcastEpisode{}).Error; err != nil {
+		t.Fatalf("migrate podcasts: %v", err)
+	}
+	user := &db.User{Name: "admin", Password: "pw", IsAdmin: true}
+	if err := dbc.Create(user).Error; err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	podcast := &db.Podcast{Title: "pod-a"}
+	if err := dbc.Create(podcast).Error; err != nil {
+		t.Fatalf("create podcast: %v", err)
+	}
+	episode := &db.PodcastEpisode{PodcastID: podcast.ID, Title: "episode-a"}
+	if err := dbc.Create(episode).Error; err != nil {
+		t.Fatalf("create episode: %v", err)
+	}
+	share := &db.Share{
+		Token: "podtoken", UserID: user.ID, Downloadable: true, Description: "pod share",
+		Entries: []*db.ShareEntry{{Item: episode.SID().String()}},
+	}
+	if err := dbc.Create(share).Error; err != nil {
+		t.Fatalf("create share: %v", err)
+	}
+	c := New(dbc, nil)
+
+	// landing renders the episode entry
+	r := httptest.NewRequest(http.MethodGet, "/podtoken", nil)
+	r.URL.Path = "/podtoken"
+	w := httptest.NewRecorder()
+	c.ServeHTTP(w, r)
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "episode-a") {
+		t.Fatalf("podcast landing: %d %s", w.Code, w.Body.String())
+	}
+
+	// disposition falls back to the title for podcast episodes
+	w = httptest.NewRecorder()
+	setDownloadDisposition(w, dbc, *episode.SID())
+	if cd := w.Header().Get("Content-Disposition"); !strings.HasPrefix(cd, "attachment;") || !strings.Contains(cd, "episode-a") {
+		t.Fatalf("podcast disposition: %q", cd)
+	}
+}
+
+func TestSetDownloadDispositionFallback(t *testing.T) {
+	dbc := newTestDB(t)
+	_, _, _, track := seedShare(t, dbc)
+	// track with no filename falls back to "artist - title"
+	if err := dbc.Model(track).Update("filename", "").Error; err != nil {
+		t.Fatalf("clear filename: %v", err)
+	}
+	w := httptest.NewRecorder()
+	setDownloadDisposition(w, dbc, *track.SID())
+	if cd := w.Header().Get("Content-Disposition"); !strings.Contains(cd, "track-a") {
+		t.Fatalf("fallback disposition: %q", cd)
+	}
+}
+
+func TestSanitizeDownloadName(t *testing.T) {
+	for in, want := range map[string]string{
+		"track-0.flac":      "track-0.flac",
+		"/a/b/\\evil.mp3":   "evil.mp3",
+		"weird\x01name.mp3": "weirdname.mp3",
+		"  padded  ":        "padded",
+		"":                  "",
+		"\x00\x1f":          "",
+	} {
+		if got := sanitizeDownloadName(in); got != want {
+			t.Errorf("sanitizeDownloadName(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestEntryAllowedEdges(t *testing.T) {
+	dbc := newTestDB(t)
+	_, _, album, track := seedShare(t, dbc)
+	// another album with a track, to test mismatch rejection
+	other := &db.Album{RootDir: "/m", LeftPath: "artist-a", RightPath: "album-b", TagTitle: "album-b"}
+	if err := dbc.Create(other).Error; err != nil {
+		t.Fatalf("create other album: %v", err)
+	}
+	otherTrack := &db.Track{AlbumID: other.ID, Filename: "other.flac", TagTitle: "other"}
+	if err := dbc.Create(otherTrack).Error; err != nil {
+		t.Fatalf("create other track: %v", err)
+	}
+	albumID := specid.ID{Type: specid.Album, Value: album.ID}
+
+	if !entryAllowed(dbc, []specid.ID{albumID}, *track.SID()) {
+		t.Fatal("track in shared album should be allowed")
+	}
+	if entryAllowed(dbc, []specid.ID{albumID}, *otherTrack.SID()) {
+		t.Fatal("track in a different album should be rejected")
+	}
+	// album entry and a track id that does not exist in the db
+	missing := specid.ID{Type: specid.Track, Value: 424242}
+	if entryAllowed(dbc, []specid.ID{albumID}, missing) {
+		t.Fatal("missing track should be rejected, not panic")
+	}
+	// track shares never expand into their album
+	trackID := *track.SID()
+	if entryAllowed(dbc, []specid.ID{trackID}, albumID) {
+		t.Fatal("album id should not be allowed by a track entry")
+	}
+}
+
 func TestDownloadDisposition(t *testing.T) {
 	dbc := newTestDB(t)
 	_, _, _, track := seedShare(t, dbc)
