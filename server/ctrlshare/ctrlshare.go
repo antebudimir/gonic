@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"mime"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -79,6 +81,7 @@ func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		overrides := map[string]string{"id": id.String()}
 		if action == "download" {
 			overrides["format"] = "raw"
+			setDownloadDisposition(w, c.dbc, id)
 		}
 		switch action {
 		case "cover":
@@ -89,6 +92,45 @@ func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "not found", http.StatusNotFound)
 	}
+}
+
+// setDownloadDisposition hints browsers to save the file instead of playing it inline.
+func setDownloadDisposition(w http.ResponseWriter, dbc *db.DB, id specid.ID) {
+	var name string
+	switch id.Type {
+	case specid.Track:
+		var tr db.Track
+		if err := dbc.Select("filename, tag_title, tag_track_artist").First(&tr, id.Value).Error; err == nil {
+			name = sanitizeDownloadName(tr.Filename)
+			if name == "" {
+				name = sanitizeDownloadName(strings.TrimSpace(tr.TagTrackArtist + " - " + tr.TagTitle))
+			}
+		}
+	case specid.PodcastEpisode:
+		var pe db.PodcastEpisode
+		if err := dbc.Select("title").First(&pe, id.Value).Error; err == nil {
+			name = sanitizeDownloadName(pe.Title)
+		}
+	}
+	if name == "" {
+		return
+	}
+	if cd := mime.FormatMediaType("attachment", map[string]string{"filename": name}); cd != "" {
+		w.Header().Set("Content-Disposition", cd)
+	}
+}
+
+// sanitizeDownloadName strips path separators and non-printable characters so
+// the name is safe in a Content-Disposition header.
+func sanitizeDownloadName(name string) string {
+	name = strings.TrimSpace(filepath.Base(name))
+	var b strings.Builder
+	for _, r := range name {
+		if r > 0x1f && r != 0x7f && r != '/' && r != '\\' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // entryAllowed allows exact entries plus tracks inside shared albums.
@@ -219,7 +261,7 @@ func (c *Controller) serveLanding(w http.ResponseWriter, share *db.Share, entrie
 			html.EscapeString(item.title), html.EscapeString(item.artist), html.EscapeString(item.album),
 			html.EscapeString(token), item.id)
 		if share.Downloadable {
-			fmt.Fprintf(&b, " <a href='%s/download?id=%s'>download</a>", html.EscapeString(token), item.id)
+			fmt.Fprintf(&b, " <a href='%s/download?id=%s' download>download</a>", html.EscapeString(token), item.id)
 		}
 		b.WriteString("</li>")
 	}

@@ -130,6 +130,23 @@ func TestLandingAndGuards(t *testing.T) {
 	}
 }
 
+func TestDownloadDisposition(t *testing.T) {
+	dbc := newTestDB(t)
+	_, _, _, track := seedShare(t, dbc)
+	w := httptest.NewRecorder()
+	setDownloadDisposition(w, dbc, *track.SID())
+	cd := w.Header().Get("Content-Disposition")
+	if !strings.HasPrefix(cd, "attachment;") || !strings.Contains(cd, "track-0.flac") {
+		t.Fatalf("expected attachment filename track-0.flac, got %q", cd)
+	}
+	// unknown track: no header, delegation proceeds without disposition
+	w = httptest.NewRecorder()
+	setDownloadDisposition(w, dbc, specid.ID{Type: specid.Track, Value: 999})
+	if w.Header().Get("Content-Disposition") != "" {
+		t.Fatalf("expected no header for unknown track")
+	}
+}
+
 func TestEntryAllowed(t *testing.T) {
 	t.Parallel()
 	dbc := newTestDB(t)
