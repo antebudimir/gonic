@@ -97,7 +97,7 @@ func writeCacheFile(t *testing.T, dir, name string, size time.Duration) string {
 	t.Helper()
 	path := filepath.Join(dir, name)
 	require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
-	require.NoError(t, os.WriteFile(path, make([]byte, int(size)), 0o644))
+	require.NoError(t, os.WriteFile(path, make([]byte, int(size)), 0o600))
 	return path
 }
 

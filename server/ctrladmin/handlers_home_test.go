@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"context"
+
 	"github.com/Masterminds/sprig"
 	"github.com/philippta/go-template/html/template"
 	"github.com/stretchr/testify/require"
@@ -20,6 +21,7 @@ import (
 )
 
 func TestServeHomeScheduleTimeRender(t *testing.T) {
+	t.Parallel()
 	m := mockfs.New(t)
 	c := &Controller{dbc: m.DB(), scanner: m.Scanner()}
 
@@ -54,6 +56,7 @@ func TestServeHomeScheduleTimeRender(t *testing.T) {
 }
 
 func TestServeHomePollingScriptEmbedsLastScanTime(t *testing.T) {
+	t.Parallel()
 	m := mockfs.New(t)
 	c := &Controller{dbc: m.DB(), scanner: m.Scanner()}
 

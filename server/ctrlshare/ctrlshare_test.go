@@ -130,7 +130,17 @@ func TestLandingAndGuards(t *testing.T) {
 	}
 }
 
+// seedShareTrack seeds the standard share and returns just its track, for
+// tests that don't care about the share itself.
+func seedShareTrack(t *testing.T, dbc *db.DB) *db.Track {
+	t.Helper()
+	_, share, _, track := seedShare(t, dbc)
+	_ = share
+	return track
+}
+
 func TestGuardsOnMediaRoutes(t *testing.T) {
+	t.Parallel()
 	// guards must hold on stream/download, not just the landing page
 	dbc := newTestDB(t)
 	_, share, _, track := seedShare(t, dbc)
@@ -177,6 +187,7 @@ func TestGuardsOnMediaRoutes(t *testing.T) {
 }
 
 func TestPodcastEpisodeShare(t *testing.T) {
+	t.Parallel()
 	dbc := newTestDB(t)
 	if err := dbc.AutoMigrate(db.Podcast{}, db.PodcastEpisode{}).Error; err != nil {
 		t.Fatalf("migrate podcasts: %v", err)
@@ -220,8 +231,9 @@ func TestPodcastEpisodeShare(t *testing.T) {
 }
 
 func TestSetDownloadDispositionFallback(t *testing.T) {
+	t.Parallel()
 	dbc := newTestDB(t)
-	_, _, _, track := seedShare(t, dbc)
+	track := seedShareTrack(t, dbc)
 	// track with no filename falls back to "artist - title"
 	if err := dbc.Model(track).Update("filename", "").Error; err != nil {
 		t.Fatalf("clear filename: %v", err)
@@ -234,6 +246,7 @@ func TestSetDownloadDispositionFallback(t *testing.T) {
 }
 
 func TestSanitizeDownloadName(t *testing.T) {
+	t.Parallel()
 	for in, want := range map[string]string{
 		"track-0.flac":      "track-0.flac",
 		"/a/b/\\evil.mp3":   "evil.mp3",
@@ -249,6 +262,7 @@ func TestSanitizeDownloadName(t *testing.T) {
 }
 
 func TestEntryAllowedEdges(t *testing.T) {
+	t.Parallel()
 	dbc := newTestDB(t)
 	_, _, album, track := seedShare(t, dbc)
 	// another album with a track, to test mismatch rejection
@@ -281,8 +295,9 @@ func TestEntryAllowedEdges(t *testing.T) {
 }
 
 func TestDownloadDisposition(t *testing.T) {
+	t.Parallel()
 	dbc := newTestDB(t)
-	_, _, _, track := seedShare(t, dbc)
+	track := seedShareTrack(t, dbc)
 	w := httptest.NewRecorder()
 	setDownloadDisposition(w, dbc, *track.SID())
 	cd := w.Header().Get("Content-Disposition")
@@ -300,7 +315,7 @@ func TestDownloadDisposition(t *testing.T) {
 func TestEntryAllowed(t *testing.T) {
 	t.Parallel()
 	dbc := newTestDB(t)
-	_, _, _, track := seedShare(t, dbc)
+	track := seedShareTrack(t, dbc)
 
 	entries := []specid.ID{*track.SID()}
 	if !entryAllowed(dbc, entries, *track.SID()) {

@@ -18,10 +18,11 @@ import (
 
 func TestServeUpdateScanScheduleDo(t *testing.T) {
 	t.Parallel()
-	m := mockfs.New(t)
-	c := &Controller{dbc: m.DB(), scanner: m.Scanner()}
 
 	t.Run("saves valid schedule", func(t *testing.T) {
+		t.Parallel()
+		m := mockfs.New(t)
+		c := &Controller{dbc: m.DB(), scanner: m.Scanner()}
 		r := httptest.NewRequest(http.MethodPost, "/admin/update_scan_schedule_do", nil)
 		require.NoError(t, r.ParseForm())
 		r.Form.Set("enabled", "1")
@@ -39,6 +40,9 @@ func TestServeUpdateScanScheduleDo(t *testing.T) {
 	})
 
 	t.Run("rejects invalid days", func(t *testing.T) {
+		t.Parallel()
+		m := mockfs.New(t)
+		c := &Controller{dbc: m.DB(), scanner: m.Scanner()}
 		for _, days := range []string{"0", "-1", "31", "abc", ""} {
 			r := httptest.NewRequest(http.MethodPost, "/admin/update_scan_schedule_do", nil)
 			require.NoError(t, r.ParseForm())
@@ -52,6 +56,9 @@ func TestServeUpdateScanScheduleDo(t *testing.T) {
 	})
 
 	t.Run("rejects invalid time", func(t *testing.T) {
+		t.Parallel()
+		m := mockfs.New(t)
+		c := &Controller{dbc: m.DB(), scanner: m.Scanner()}
 		for _, clock := range []string{"", "25:00", "nope"} {
 			r := httptest.NewRequest(http.MethodPost, "/admin/update_scan_schedule_do", nil)
 			require.NoError(t, r.ParseForm())
@@ -65,6 +72,9 @@ func TestServeUpdateScanScheduleDo(t *testing.T) {
 	})
 
 	t.Run("can disable", func(t *testing.T) {
+		t.Parallel()
+		m := mockfs.New(t)
+		c := &Controller{dbc: m.DB(), scanner: m.Scanner()}
 		r := httptest.NewRequest(http.MethodPost, "/admin/update_scan_schedule_do", nil)
 		require.NoError(t, r.ParseForm())
 		r.Form.Set("enabled", "0")

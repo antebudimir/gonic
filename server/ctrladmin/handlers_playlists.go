@@ -44,10 +44,11 @@ func (c *Controller) ServePlaylists(r *http.Request) *Response {
 		}
 		if pl.Rules != "" {
 			rules, err := playlist.ParseRules(pl.Rules)
-			if err != nil {
+			switch {
+			case err != nil:
 				view.RulesInvalid = true
 				view.RulesJSON = pl.Rules
-			} else {
+			default:
 				buf, err := json.MarshalIndent(rules, "", "  ")
 				if err != nil {
 					view.RulesInvalid = true
@@ -63,21 +64,23 @@ func (c *Controller) ServePlaylists(r *http.Request) *Response {
 }
 
 func (c *Controller) ServeUpdatePlaylistRulesDo(r *http.Request) *Response {
+	const redirectPlaylists = "/admin/playlists"
+
 	relPath := r.PostFormValue("playlist")
 	if relPath == "" {
-		return &Response{redirect: "/admin/playlists", flashW: []string{"no playlist given"}}
+		return &Response{redirect: redirectPlaylists, flashW: []string{"no playlist given"}}
 	}
 
 	// validate before touching the file; empty input clears the rules
 	rules := r.PostFormValue("rules")
 	parsed, err := playlist.ParseRules(rules)
 	if err != nil {
-		return &Response{redirect: "/admin/playlists", flashW: []string{fmt.Sprintf("invalid rules: %v", err)}}
+		return &Response{redirect: redirectPlaylists, flashW: []string{fmt.Sprintf("invalid rules: %v", err)}}
 	}
 
 	pl, err := c.playlistStore.Read(relPath)
 	if err != nil {
-		return &Response{redirect: "/admin/playlists", flashW: []string{fmt.Sprintf("error reading playlist: %v", err)}}
+		return &Response{redirect: redirectPlaylists, flashW: []string{fmt.Sprintf("error reading playlist: %v", err)}}
 	}
 	if parsed == nil {
 		pl.Rules = ""
@@ -85,9 +88,9 @@ func (c *Controller) ServeUpdatePlaylistRulesDo(r *http.Request) *Response {
 		pl.Rules = parsed.String()
 	}
 	if err := c.playlistStore.Write(relPath, pl); err != nil {
-		return &Response{redirect: "/admin/playlists", flashW: []string{fmt.Sprintf("error writing playlist: %v", err)}}
+		return &Response{redirect: redirectPlaylists, flashW: []string{fmt.Sprintf("error writing playlist: %v", err)}}
 	}
-	return &Response{redirect: "/admin/playlists", flashN: []string{"playlist rules updated"}}
+	return &Response{redirect: redirectPlaylists, flashN: []string{"playlist rules updated"}}
 }
 
 func (c *Controller) ownerName(userID int) string {

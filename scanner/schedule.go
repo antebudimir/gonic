@@ -145,17 +145,6 @@ func NextRun(now, lastScheduled time.Time, days int, at Clock) time.Time {
 	}
 }
 
-func (s *Scanner) lastScanTime() time.Time {
-	tStr, err := s.db.GetSetting(db.LastScanTime)
-	if err != nil || tStr == "" {
-		return time.Time{}
-	}
-	i, _ := strconv.ParseInt(tStr, 10, 64)
-	return time.Unix(i, 0)
-}
-
-// LastScheduledScanTime returns the time of the last scan started by the
-// schedule, or the zero time if there has been none.
 func (s *Scanner) LastScheduledScanTime() time.Time {
 	tStr, err := s.db.GetSetting(db.LastScheduledScanTime)
 	if err != nil || tStr == "" {

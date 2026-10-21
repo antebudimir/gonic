@@ -34,9 +34,9 @@ func TestRulesRoundTrip(t *testing.T) {
 
 func TestParseRules(t *testing.T) {
 	t.Parallel()
-	nil, err := playlist.ParseRules("")
+	parsed, err := playlist.ParseRules("")
 	require.NoError(t, err)
-	require.Nil(t, nil)
+	require.Nil(t, parsed)
 
 	_, err = playlist.ParseRules("{bad json")
 	require.Error(t, err)

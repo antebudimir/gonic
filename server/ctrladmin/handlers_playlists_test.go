@@ -11,8 +11,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"go.senan.xyz/gonic/db"
 	"os"
+
+	"go.senan.xyz/gonic/db"
 
 	"go.senan.xyz/gonic/fileutil"
 	"go.senan.xyz/gonic/mockfs"

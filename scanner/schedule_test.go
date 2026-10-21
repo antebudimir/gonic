@@ -29,6 +29,7 @@ func TestParseClock(t *testing.T) {
 		{in: "aa:bb", wantErr: true},
 	} {
 		t.Run(tc.in, func(t *testing.T) {
+			t.Parallel()
 			clock, err := ParseClock(tc.in)
 			if tc.wantErr {
 				assert.Error(t, err)
@@ -50,7 +51,7 @@ func TestScheduleDue(t *testing.T) {
 	t.Parallel()
 	at := Clock{Hour: 4, Minute: 30}
 	day := func(hour, minute int) time.Time {
-		return time.Date(2026, 10, 18, hour, minute, 0, 0, time.Local)
+		return time.Date(2026, 10, 18, hour, minute, 0, 0, time.UTC)
 	}
 
 	for _, tc := range []struct {
@@ -76,28 +77,33 @@ func TestScheduleDue(t *testing.T) {
 		{"manual scan never postpones (last is scheduled only)", day(4, 31).AddDate(0, 0, 1), time.Time{}, 1, at, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tc.expect, scheduleDue(tc.now, tc.last, tc.days, tc.at))
 		})
 	}
 }
 
 func TestNextRun(t *testing.T) {
+	t.Parallel()
 	now := time.Date(2026, 10, 18, 19, 0, 0, 0, time.UTC)
 	at := Clock{Hour: 4, Minute: 30}
 
 	t.Run("no scheduled scan, time today not reached yet", func(t *testing.T) {
+		t.Parallel()
 		got := NextRun(now, time.Time{}, 1, Clock{Hour: 20, Minute: 0})
 		want := time.Date(2026, 10, 18, 20, 0, 0, 0, time.UTC)
 		assert.Equal(t, want, got)
 	})
 
 	t.Run("no last scan, time later today", func(t *testing.T) {
+		t.Parallel()
 		got := NextRun(now, time.Time{}, 1, Clock{Hour: 20, Minute: 0})
 		want := time.Date(2026, 10, 18, 20, 0, 0, 0, time.UTC)
 		assert.Equal(t, want, got)
 	})
 
 	t.Run("last scheduled scan covered today slot, shows tomorrow", func(t *testing.T) {
+		t.Parallel()
 		last := time.Date(2026, 10, 18, 12, 0, 0, 0, time.UTC)
 		got := NextRun(now, last, 1, at)
 		want := time.Date(2026, 10, 19, 4, 30, 0, 0, time.UTC)
@@ -105,6 +111,7 @@ func TestNextRun(t *testing.T) {
 	})
 
 	t.Run("time changed to later today, shows today", func(t *testing.T) {
+		t.Parallel()
 		last := time.Date(2026, 10, 18, 19, 45, 0, 0, time.UTC)
 		got := NextRun(now, last, 1, Clock{Hour: 20, Minute: 0})
 		want := time.Date(2026, 10, 18, 20, 0, 0, 0, time.UTC)
@@ -112,12 +119,14 @@ func TestNextRun(t *testing.T) {
 	})
 
 	t.Run("no scheduled scan yet and slot already passed, due now", func(t *testing.T) {
+		t.Parallel()
 		got := NextRun(now, time.Time{}, 1, at)
 		want := time.Date(2026, 10, 18, 4, 30, 0, 0, time.UTC)
 		assert.Equal(t, want, got)
 	})
 
 	t.Run("disabled schedule", func(t *testing.T) {
+		t.Parallel()
 		assert.True(t, NextRun(now, time.Time{}, 0, at).IsZero())
 	})
 }

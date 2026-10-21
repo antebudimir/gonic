@@ -55,6 +55,7 @@ func TestParseOPML(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			urls, err := podcast.ParseOPML(strings.NewReader(tc.in))
 			if tc.wantErr {
 				assert.Error(t, err)

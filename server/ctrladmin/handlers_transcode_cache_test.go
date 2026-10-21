@@ -18,6 +18,7 @@ func TestServeUpdateTranscodeCacheSizeDo(t *testing.T) {
 	t.Parallel()
 
 	newController := func(t *testing.T) *Controller {
+		t.Helper()
 		m := mockfs.New(t)
 		return &Controller{
 			dbc:            m.DB(),
@@ -33,6 +34,7 @@ func TestServeUpdateTranscodeCacheSizeDo(t *testing.T) {
 	}
 
 	t.Run("valid size is applied and persisted", func(t *testing.T) {
+		t.Parallel()
 		c := newController(t)
 		resp := c.ServeUpdateTranscodeCacheSizeDo(post(t, "250"))
 		assert.Empty(t, resp.flashW)
@@ -43,6 +45,7 @@ func TestServeUpdateTranscodeCacheSizeDo(t *testing.T) {
 	})
 
 	t.Run("zero means no limit", func(t *testing.T) {
+		t.Parallel()
 		c := newController(t)
 		resp := c.ServeUpdateTranscodeCacheSizeDo(post(t, "0"))
 		assert.Empty(t, resp.flashW)
@@ -53,6 +56,7 @@ func TestServeUpdateTranscodeCacheSizeDo(t *testing.T) {
 	})
 
 	t.Run("invalid size is rejected", func(t *testing.T) {
+		t.Parallel()
 		c := newController(t)
 		resp := c.ServeUpdateTranscodeCacheSizeDo(post(t, "abc"))
 		assert.NotEmpty(t, resp.flashW)

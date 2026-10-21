@@ -23,6 +23,8 @@ import (
 	"go.senan.xyz/gonic/server/ctrlsubsonic/specid"
 )
 
+const actionDownload = "download"
+
 type Controller struct {
 	dbc      *db.DB
 	subsonic *ctrlsubsonic.Controller
@@ -63,8 +65,8 @@ func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch action {
 	case "":
 		c.serveLanding(w, share, entries)
-	case "stream", "download", "cover":
-		if action == "download" && !share.Downloadable {
+	case "stream", actionDownload, "cover":
+		if action == actionDownload && !share.Downloadable {
 			http.Error(w, "share is not downloadable", http.StatusForbidden)
 			return
 		}
@@ -79,7 +81,7 @@ func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		overrides := map[string]string{"id": id.String()}
-		if action == "download" {
+		if action == actionDownload {
 			overrides["format"] = "raw"
 			setDownloadDisposition(w, c.dbc, id)
 		}
