@@ -1,6 +1,7 @@
 package playlist_test
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -54,4 +55,24 @@ It has multiple lines 👍
 	playlistIDs, err = store.List()
 	require.NoError(t, err)
 	require.True(t, len(playlistIDs) == 1)
+}
+
+func TestDelete(t *testing.T) {
+	t.Parallel()
+
+	store, err := playlist.NewStore(t.TempDir())
+	require.NoError(t, err)
+
+	require.NoError(t, store.Write("1/smart.m3u", &playlist.Playlist{UserID: 1, Name: "smart"}))
+	require.NoError(t, store.Delete("1/smart.m3u"))
+
+	ids, err := store.List()
+	require.NoError(t, err)
+	require.Empty(t, ids)
+
+	// deleting again is an error, not a silent success
+	require.Error(t, store.Delete("1/smart.m3u"))
+
+	// traversal out of the base dir must be refused
+	require.Error(t, store.Delete(filepath.Join("..", "evil.m3u")))
 }

@@ -46,4 +46,17 @@ func TestParseRules(t *testing.T) {
 
 	_, err = playlist.ParseRules(`{"minRating":9}`)
 	require.Error(t, err)
+
+	_, err = playlist.ParseRules(`{"minRating":-1}`)
+	require.Error(t, err)
+
+	// whitespace-only is treated as no rules
+	noRules, err := playlist.ParseRules("  \n\t ")
+	require.NoError(t, err)
+	require.Nil(t, noRules)
+
+	// unknown fields are ignored, valid fields still parsed
+	rules, err := playlist.ParseRules(`{"genre":"Jazz","fromFuture":3000}`)
+	require.NoError(t, err)
+	require.Equal(t, &playlist.Rules{Genre: "Jazz"}, rules)
 }
