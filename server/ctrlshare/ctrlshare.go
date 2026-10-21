@@ -124,6 +124,9 @@ func setDownloadDisposition(w http.ResponseWriter, dbc *db.DB, id specid.ID) {
 // the name is safe in a Content-Disposition header.
 func sanitizeDownloadName(name string) string {
 	name = strings.TrimSpace(filepath.Base(name))
+	if name == "." || name == string(filepath.Separator) {
+		return ""
+	}
 	var b strings.Builder
 	for _, r := range name {
 		if r > 0x1f && r != 0x7f && r != '/' && r != '\\' {
