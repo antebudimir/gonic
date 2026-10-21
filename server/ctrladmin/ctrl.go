@@ -95,6 +95,7 @@ func New(dbc *db.DB, sessDB *gormstore.Store, scanner *scanner.Scanner, podcasts
 	c.Handle("GET /home", userChain(resp(c.ServeHome)))
 	c.Handle("GET /playlists", userChain(resp(c.ServePlaylists)))
 	c.Handle("GET /shares", userChain(resp(c.ServeShares)))
+	c.Handle("GET /podcasts", userChain(resp(c.ServePodcasts)))
 	c.Handle("GET /change_username", userChain(resp(c.ServeChangeUsername)))
 	c.Handle("POST /change_username_do", userChain(resp(c.ServeChangeUsernameDo)))
 	c.Handle("GET /change_password", userChain(resp(c.ServeChangePassword)))

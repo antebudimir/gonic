@@ -125,16 +125,6 @@ func (c *Controller) ServeHome(r *http.Request) *Response {
 	}
 	data.TranscodeFormatsExhausted = len(data.TranscodeFormatPreferences) >= len(formats)
 
-	// podcasts box
-	if err := c.dbc.Find(&data.Podcasts).Error; err != nil {
-		return &Response{code: 500, err: fmt.Sprintf("error finding podcasts: %v", err)}
-	}
-
-	// internet radio box
-	if err := c.dbc.Find(&data.InternetRadioStations).Error; err != nil {
-		return &Response{code: 500, err: fmt.Sprintf("error finding internet radio stations: %v", err)}
-	}
-
 	return &Response{
 		template: "home.tmpl",
 		data:     data,
@@ -517,6 +507,14 @@ func (c *Controller) ServeDeleteTranscodeFormatPrefDo(r *http.Request) *Response
 	return &Response{
 		redirect: "/admin/home",
 	}
+}
+
+func (c *Controller) ServePodcasts(r *http.Request) *Response {
+	data := &templateData{}
+	if err := c.dbc.Find(&data.Podcasts).Error; err != nil {
+		return &Response{code: 500, err: fmt.Sprintf("error finding podcasts: %v", err)}
+	}
+	return &Response{template: "podcasts.tmpl", data: data}
 }
 
 func (c *Controller) ServePodcastAddDo(r *http.Request) *Response {
