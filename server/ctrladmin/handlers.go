@@ -517,6 +517,14 @@ func (c *Controller) ServePodcasts(r *http.Request) *Response {
 	return &Response{template: "podcasts.tmpl", data: data}
 }
 
+func (c *Controller) ServeRadio(r *http.Request) *Response {
+	data := &templateData{}
+	if err := c.dbc.Find(&data.InternetRadioStations).Error; err != nil {
+		return &Response{code: 500, err: fmt.Sprintf("error finding internet radio stations: %v", err)}
+	}
+	return &Response{template: "radio.tmpl", data: data}
+}
+
 func (c *Controller) ServePodcastAddDo(r *http.Request) *Response {
 	rssURL := r.FormValue("feed")
 	feed, err := c.podcasts.ParseFeed(rssURL)

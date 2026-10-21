@@ -1,0 +1,33 @@
+{{ component "layout" . }}
+{{ component "layout_user" . }}
+
+{{ if .User.IsAdmin }}
+{{ component "block" (props .
+    "Icon" "rss"
+    "Name" "internet radio stations"
+    "Desc" "you can add and update internet radio stations here"
+) }}
+    <div class="grid grid-cols-[1fr_1fr_min-content_min-content] md:grid-cols-[1fr_1fr_1fr_auto_auto] gap-2 items-center justify-items-end">
+        {{ range $pref := .InternetRadioStations }}
+            <form class="contents" action="{{ printf "/admin/update_internet_radio_station_do?id=%d" $pref.ID | path }}" method="post">
+            <input class="col-span-full md:col-auto" type="text" name="name" value={{ $pref.Name }}>
+            <input type="text" name="streamURL" placeholder="stream url" value={{ $pref.StreamURL }}>
+            <input type="text" name="homepageURL" placeholder="homepage url" value={{ $pref.HomepageURL }}>
+            <input type="submit" value="update">
+            </form>
+            <form class="contents" action="{{ printf "/admin/delete_internet_radio_station_do?id=%d" $pref.ID | path }}" method="post">
+            <input type="submit" value="delete">
+            </form>
+        {{ end }}
+        <form class="contents" action="{{ path "/admin/add_internet_radio_station_do" }}" method="post">
+        <input type="text" name="name" placeholder="name">
+        <input type="text" name="streamURL" placeholder="stream url">
+        <input type="text" name="homepageURL" placeholder="homepage url">
+        <input class="col-auto md:col-span-2" type="submit" value="add">
+        </form>
+    </div>
+{{ end }}
+{{ end }}
+
+{{ end }}
+{{ end }}
