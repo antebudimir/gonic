@@ -23,10 +23,20 @@
         <div>
             {{ if $pl.RulesInvalid }}
                 <span class="text-red-500" title="{{ $pl.RulesJSON }}">invalid rules</span>
+                <form class="contents mt-1" action="{{ path "/admin/update_playlist_rules_do" }}" method="post">
+<input type="hidden" name="playlist" value="{{ $pl.RelPath }}">
+<textarea class="w-64 h-20 text-left" name="rules">{{ $pl.RulesJSON }}</textarea>
+<input type="submit" value="save rules">
+</form>
             {{ else if $pl.RulesJSON }}
                 <details>
                     <summary class="cursor-pointer">view</summary>
                     <pre class="text-left text-gray-500 whitespace-pre-wrap border border-gray-200 p-2 mt-1">{{ $pl.RulesJSON }}</pre>
+                    <form class="contents mt-1" action="{{ path "/admin/update_playlist_rules_do" }}" method="post">
+<input type="hidden" name="playlist" value="{{ $pl.RelPath }}">
+<textarea class="w-64 h-20 text-left" name="rules">{{ $pl.RulesJSON }}</textarea>
+<input type="submit" value="save rules">
+</form>
                 </details>
             {{ else }}
                 <span class="text-gray-500">n/a</span>

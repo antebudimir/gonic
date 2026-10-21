@@ -62,6 +62,34 @@ func (c *Controller) ServePlaylists(r *http.Request) *Response {
 	return &Response{template: "playlists.tmpl", data: &templateData{AllPlaylists: playlists}}
 }
 
+func (c *Controller) ServeUpdatePlaylistRulesDo(r *http.Request) *Response {
+	relPath := r.PostFormValue("playlist")
+	if relPath == "" {
+		return &Response{redirect: "/admin/playlists", flashW: []string{"no playlist given"}}
+	}
+
+	// validate before touching the file; empty input clears the rules
+	rules := r.PostFormValue("rules")
+	parsed, err := playlist.ParseRules(rules)
+	if err != nil {
+		return &Response{redirect: "/admin/playlists", flashW: []string{fmt.Sprintf("invalid rules: %v", err)}}
+	}
+
+	pl, err := c.playlistStore.Read(relPath)
+	if err != nil {
+		return &Response{redirect: "/admin/playlists", flashW: []string{fmt.Sprintf("error reading playlist: %v", err)}}
+	}
+	if parsed == nil {
+		pl.Rules = ""
+	} else {
+		pl.Rules = parsed.String()
+	}
+	if err := c.playlistStore.Write(relPath, pl); err != nil {
+		return &Response{redirect: "/admin/playlists", flashW: []string{fmt.Sprintf("error writing playlist: %v", err)}}
+	}
+	return &Response{redirect: "/admin/playlists", flashN: []string{"playlist rules updated"}}
+}
+
 func (c *Controller) ownerName(userID int) string {
 	user, err := c.dbc.GetUserByID(userID)
 	if err != nil || user == nil {
