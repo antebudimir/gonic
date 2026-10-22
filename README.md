@@ -1,11 +1,9 @@
-> **⚠️ Fork Notice**: This is a fork of the original [Gonic](https://github.com/sentriz/gonic) project. I created this fork primarily to improve my admin UX (added dark admin UI, OPML podcast import, configurable auto-scan scheduling, live scan status, and transcode cache management in the UI). While I'll try to keep this fork in sync with the original repo, that's not the primary focus. I appreciate sentriz for making Gonic in the first place ❤️, but while upstream ships regular releases, community PRs (especially larger feature ones) have been waiting for years. I'll continue to implement feats I find useful for my use case & fix any obvious bugs I encounter, but for full support and the most up-to-date version, please use the original repository.
+> **⚠️ Fork Notice**: This is a fork of the original [Gonic](https://github.com/sentriz/gonic) project. I created it to improve my admin UX (dark admin UI, OPML podcast import, auto-scan scheduling, live scan status, transcode cache management) & to add feats I need that upstream has been slow to address (some community PRs have waited years), public share links with Subsonic share API support & smart playlists via a #GONIC-RULES attribute in m3u files. I'll try to keep this fork in sync with the original repo, though that isn't the primary focus. I'll keep adding feats I find useful & fixing obvious bugs, but for full support please use the original repo. ❤️ to sentriz for making Gonic in the first place!
 >
 
 <p align="center"><img width="500" src="https://github.com/sentriz/gonic/blob/master/.github/logo.png?raw=true"></p>
 <h4 align="center">free-software <a href="http://www.subsonic.org/">subsonic</a> server API implementation, supporting its <a href="https://github.com/sentriz/gonic?tab=readme-ov-file#features">many clients</a></h4>
 <p align="center">
-  <a href="http://hub.docker.com/r/sentriz/gonic"><img src="https://img.shields.io/docker/pulls/sentriz/gonic.svg"></a>
-  <a href="https://repology.org/project/gonic/"><img src="https://repology.org/badge/tiny-repos/gonic.svg"></a>
   <a href="https://github.com/sentriz/gonic/releases"><img src="https://img.shields.io/github/v/release/sentriz/gonic.svg"></a>
   <a href="https://web.libera.chat/#gonic"><img src="https://img.shields.io/badge/libera.chat-%23gonic-blue.svg"></a>
 </p>
@@ -27,7 +25,16 @@
 - support for the [album-artist](https://mkoby.com/2007/02/18/artist-versus-album-artist/) tag, to not clutter your artist list with compilation album appearances
 - written in [go](https://golang.org/), so lightweight and suitable for a raspberry pi, etc. (see ARM images below)
 - newer salt and token auth
+
 - tested on [airsonic-refix](https://github.com/tamland/airsonic-refix), [amperfy](https://github.com/BLeeEZ/amperfy), [symfonium](https://symfonium.app), [dsub](https://f-droid.org/en/packages/github.daneren2005.dsub/), [jamstash](https://github.com/sqrlmstr5000/Jamstash), [music-assistant](https://www.music-assistant.io/), [subsonic.el](https://git.sr.ht/~amk/subsonic.el), [sublime music](https://github.com/sublime-music/sublime-music), [soundwaves](https://apps.apple.com/us/app/soundwaves/id736139596), [stmp](https://github.com/wildeyedskies/stmp), [termsonic](https://git.sixfoisneuf.fr/termsonic/), [tempus](https://github.com/eddyizm/tempus/), [strawberry](https://www.strawberrymusicplayer.org/), and [ultrasonic](https://gitlab.com/ultrasonic/ultrasonic)
+
+### fork additions
+
+- public, tokenized share links with a landing page, in-browser streaming, & downloads; full subsonic share api (createShare/getShares/updateShare/deleteShare)
+- smart playlists: m3u files with a `#GONIC-RULES` attribute are expanded into track queries, editable from the admin playlists page ([see more](#smart-playlists-fork))
+- read-only admin pages for shares & playlists (including smart playlist rules)
+- podcasts & internet radio on dedicated admin pages
+- dark admin theme, OPML podcast import, live scan status polling, configurable scan schedule, & transcode cache visibility/ejection
 
 ## installation
 
@@ -40,15 +47,19 @@ password can then be changed from the web interface
 
 ### ...with docker
 
-<https://github.com/sentriz/gonic/wiki/installation#with-docker>
+this fork publishes multi-arch (amd64 + arm64) images to ghcr, built by CI for every tagged release:
+
+```shell
+docker pull ghcr.io/antebudimir/gonic:latest
+# or pin a version
+docker pull ghcr.io/antebudimir/gonic:0.22.0-fork.9
+```
+
+for the general docker setup (volumes, env vars, reverse proxy), see the upstream wiki: <https://github.com/sentriz/gonic/wiki/installation#with-docker>
 
 ### ...with systemd
 
 <https://github.com/sentriz/gonic/wiki/installation#with-systemd>
-
-### ...elsewhere
-
-[![](https://repology.org/badge/vertical-allrepos/gonic.svg)](https://repology.org/project/gonic/versions)
 
 ## configuration options
 
@@ -80,6 +91,28 @@ password can then be changed from the web interface
 | `GONIC_TRANSCODE_EJECT_INTERVAL`    | `-transcode-eject-interval`    | **optional** interval (in minutes) to eject transcode cache (0 = never)                                                                                                                                                                                                           |
 | `GONIC_EXPVAR`                      | `-expvar`                      | **optional** enable the /debug/vars endpoint (exposes useful debugging attributes as well as database stats)                                                                                                                                                                      |
 
+## smart playlists (fork)
+
+an m3u playlist in your playlists directory can contain a `#GONIC-RULES` attribute holding a JSON blob of rules. when a client asks for the playlist, gonic resolves the rules into a live track query instead of serving the static file contents:
+
+```m3u
+#GONIC-RULES:"{\"genre\":\"Jazz\",\"fromYear\":1960,\"toYear\":1979,\"minRating\":4,\"sort\":\"year\",\"limit\":100}"
+```
+
+all fields are optional & are ANDed together when present:
+
+| field | desc |
+| ----- | ---- |
+| `genre` | only tracks in this genre |
+| `fromYear` / `toYear` | release year range |
+| `minRating` | minimum 1-5 star rating from any user |
+| `starred` | only tracks starred by any user |
+| `minPlays` | minimum play count from any user |
+| `sort` | one of `random` (default), `rating`, `plays`, `year`, `title` |
+| `limit` | max number of tracks to return |
+
+rules can also be viewed & edited from the admin playlists page, which writes the attribute back to the m3u file on disk.
+
 ## multi valued tags (v0.16+)
 
 gonic can support potentially multi valued tags like `genres`, `artists`, and `albumartists`. in both cases gonic will individual entries in its database for each.
@@ -98,9 +131,11 @@ note: `,` is a special character in the environment variable parser. if you wish
 
 ## screenshots
 
-|                                                                                 |                                                                                 |                                                                                 |                                                                                 |                                                                                 |
-| :-----------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: |
-| ![](https://raw.githubusercontent.com/sentriz/gonic/master/.github/scrot_1.png) | ![](https://raw.githubusercontent.com/sentriz/gonic/master/.github/scrot_2.png) | ![](https://raw.githubusercontent.com/sentriz/gonic/master/.github/scrot_3.png) | ![](https://raw.githubusercontent.com/sentriz/gonic/master/.github/scrot_4.png) | ![](https://raw.githubusercontent.com/sentriz/gonic/master/.github/scrot_5.png) |
+| | |
+| :---: | :---: |
+| ![](/.github/home-1.png) | ![](/.github/home-2.png) |
+| ![](/.github/playlists.png) | ![](/.github/podcasts.png) |
+| ![](/.github/radio.png) | ![](/.github/shares.png) |
 
 ## multiple folders support (v0.15+)
 

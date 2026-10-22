@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.22.0-fork.9](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.8...v0.22.0-fork.9) (2026-10-21)
+
+
+### Bug Fixes
+
+* **admin:** handle never-visited shares (nil `LastVisitedAt` panic)
+* **share:** empty filename sanitized to `""` not `".`"
+
+
+### Others
+
+* **ci:** build and push multi-arch (amd64/arm64) docker image on tag push
+* test coverage for admin rules-edit POST, shares handlers, share guards/expiry/disposition, and smart playlist rule validation + query building
+* fix all outstanding golangci-lint issues so CI lint passes
+
+## [0.22.0-fork.8](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.7...v0.22.0-fork.8) (2026-10-21)
+
+
+### Bug Fixes
+
+* **share:** force download on download links, keep stream inline
+
+## [0.22.0-fork.7](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.6...v0.22.0-fork.7) (2026-10-21)
+
+
+### Features
+
+* **admin:** read-only shares page
+* **admin:** read-only playlists page with smart playlist rules viewer
+* **admin:** edit smart playlist rules from the playlists page
+* **db:** add share and share entry models
+* **playlist:** support `#GONIC-RULES` smart playlist attribute in m3u files
+* **share:** public tokenized share links with landing page, streaming and downloads
+* **subsonic:** add share api endpoints (createShare/getShares/updateShare/deleteShare)
+* **subsonic:** resolve smart playlist rules into track queries
+
+
+### Styles
+
+* **admin:** match field border radius to buttons
+
+
+### Others
+
+* add fork info to the README
+* **admin:** move podcasts to a dedicated page
+* **admin:** move internet radio to a dedicated page
+
 ## [0.22.0-fork.6](https://www.github.com/antebudimir/gonic/compare/v0.22.0-fork.5...v0.22.0-fork.6) (2026-10-19)
 
 
