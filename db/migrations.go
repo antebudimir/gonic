@@ -107,6 +107,7 @@ func (db *DB) Migrate(ctx MigrationContext) error {
 		construct(ctx, "202609241500", migrateTrackISRCUniquePerTrack),
 		construct(ctx, "202610081200", migrateClearNegativeAudioProperties),
 		construct(ctx, "202610201200", migrateAddShares),
+		construct(ctx, "202610221200", migrateAddAudioProperties),
 	}
 
 	return gormigrate.
@@ -1137,4 +1138,8 @@ func migrateAddShares(tx *gorm.DB, _ MigrationContext) error {
 		Share{},
 		ShareEntry{},
 	).Error
+}
+
+func migrateAddAudioProperties(tx *gorm.DB, _ MigrationContext) error {
+	return tx.AutoMigrate(Track{}, PodcastEpisode{}).Error
 }
