@@ -47,13 +47,24 @@ password can then be changed from the web interface
 
 ### ...with docker
 
-this fork publishes multi-arch (amd64 + arm64) images to ghcr, built by CI for every tagged release:
+this fork publishes multi-arch (amd64 + arm64) images to ghcr, built by CI on every tag push:
 
 ```shell
 docker pull ghcr.io/antebudimir/gonic:latest
 # or pin a version
-docker pull ghcr.io/antebudimir/gonic:0.22.0-fork.9
+docker pull ghcr.io/antebudimir/gonic:0.23.0-fork.10
 ```
+
+tag pushes (`v*`) build and push **only** the 2-arch container image
+(amd64 + arm64, ghcr only). `build-binaries` and the 4-arch `build-docker`
+job are gated behind `release-please` creating a release, which never fires
+on fork tags — so a tag push produces **no** github release page, **no**
+binaries, and **no** arm/v6 / arm/v7 images. this is intentional: the
+container image is the only artifact this fork consumes.
+
+if you ever need binaries or arm/v6-v7 images, see `release.yaml` —
+add a tag condition to `build-binaries` (mirroring `build-docker-tag`) or
+add the platforms to `build-docker-tag`'s `platforms:` line.
 
 for the general docker setup (volumes, env vars, reverse proxy), see the upstream wiki: <https://github.com/sentriz/gonic/wiki/installation#with-docker>
 
