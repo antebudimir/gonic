@@ -90,6 +90,7 @@ for the general docker setup (volumes, env vars, reverse proxy), see the upstrea
 | `GONIC_SCAN_AT_START_ENABLED`       | `-scan-at-start-enabled`       | **optional** whether to perform an initial scan at startup                                                                                                                                                                                                                        |
 | `GONIC_SCAN_WATCHER_ENABLED`        | `-scan-watcher-enabled`        | **optional** whether to watch file system for new music and rescan                                                                                                                                                                                                                |
 | `GONIC_SCAN_EMBEDDED_COVER_ENABLED` | `-scan-embedded-cover-enabled` | **optional** whether to scan for embedded covers in audio files (_default_ `true`)                                                                                                                                                                                                |
+| `GONIC_SCAN_NON_ADMIN_ENABLED`      | `-scan-non-admin-enabled`      | **optional** whether non-admin users can start a scan via the subsonic api. by default only admin users can                                                                                                                                                                       |
 | `GONIC_JUKEBOX_ENABLED`             | `-jukebox-enabled`             | **optional** whether the subsonic [jukebox api](https://airsonic.github.io/docs/jukebox/) should be enabled                                                                                                                                                                       |
 | `GONIC_JUKEBOX_MPV_EXTRA_ARGS`      | `-jukebox-mpv-extra-args`      | **optional** extra command line arguments to pass to the jukebox mpv daemon                                                                                                                                                                                                       |
 | `GONIC_PODCAST_PURGE_AGE`           | `-podcast-purge-age`           | **optional** age (in days) to purge podcast episodes if not accessed                                                                                                                                                                                                              |
@@ -219,3 +220,13 @@ music
             ├── 03.13 Jab Gee.flac
             └── folder.jpg
 ```
+
+## ignoring folders
+
+to exclude a folder and everything beneath it from scanning, create an empty file named `.gonicignore` inside it.
+
+```shell
+$ touch "/path/to/music/Alan Vega/(1980) Alan Vega [MP3]/.gonicignore"
+```
+
+for excluding by name across the whole library, see the `-exclude-pattern` option.
