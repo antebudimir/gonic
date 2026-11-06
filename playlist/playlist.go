@@ -126,7 +126,7 @@ func (s *Store) Read(relPath string) (*Playlist, error) {
 	}
 	defer file.Close()
 
-	for sc := bufio.NewScanner(file); sc.Scan(); {
+	for sc := bufio.NewScanner(fileutil.StripBOM(file)); sc.Scan(); {
 		line := strings.TrimSpace(sc.Text())
 		if line == "" {
 			continue
@@ -174,7 +174,7 @@ func (s *Store) Write(relPath string, playlist *Playlist) error {
 	defer file.Close()
 
 	var existingComments []string
-	for sc := bufio.NewScanner(file); sc.Scan(); {
+	for sc := bufio.NewScanner(fileutil.StripBOM(file)); sc.Scan(); {
 		line := strings.TrimSpace(sc.Text())
 		if strings.HasPrefix(line, attrPrefix) {
 			continue
