@@ -27,6 +27,9 @@ jobs:
     name: Run Release Please
     runs-on: ubuntu-latest
     needs: [test]
+    # this fork never publishes release-please releases; gate it to upstream so it
+    # stops proposing upstream-versioned releases here (it opened "chore: release 0.24.0")
+    if: github.repository == 'sentriz/gonic'
     permissions:
       contents: write
       pull-requests: write
@@ -152,11 +155,18 @@ jobs:
     needs: [release-please]
     name: Notify IRC
     runs-on: ubuntu-latest
+    # posts to upstream's #gonic channel; never from this fork
+    if: github.repository == 'sentriz/gonic'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Notify
+        env:
+          IRC_NOTIFY_URL: ${{ secrets.IRC_NOTIFY_URL }}
         run: |
-          set +x e
-          git log -1 --pretty="push to master (@%an) %s" | curl "${{ secrets.IRC_NOTIFY_URL }}" -F target=#gonic -F message=@- >/dev/null 2>&1
-          exit 0
+          if [ -z "$IRC_NOTIFY_URL" ]; then
+            echo "IRC_NOTIFY_URL not set, skipping"
+            exit 0
+          fi
+          git log -1 --pretty="push to master (@%an) %s" \
+            | curl -fsS "$IRC_NOTIFY_URL" -F target=#gonic -F message=@- >/dev/null 2>&1 || true
