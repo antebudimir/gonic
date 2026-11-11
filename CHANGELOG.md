@@ -16,6 +16,28 @@ upstream sync from [sentriz/gonic](https://github.com/sentriz/gonic) post-`v0.23
 
 * **subsonic:** load playlist tracks in one query ([upstream #744](https://github.com/sentriz/gonic/issues/744))
 
+## [0.24.0](https://www.github.com/antebudimir/gonic/compare/v0.23.0...v0.24.0) (2026-11-11)
+
+
+### Features
+
+* **gonic:** add flag to allow normal users to start scans with subsonic ([#741](https://www.github.com/antebudimir/gonic/issues/741)) ([2d400a6](https://www.github.com/antebudimir/gonic/commit/2d400a65f9b7d1eb26dfcc261b9afba41123c224))
+* **scanner:** allow to skip directories with a `.gonicignore` marker file ([#740](https://www.github.com/antebudimir/gonic/issues/740)) ([7784f8c](https://www.github.com/antebudimir/gonic/commit/7784f8cb523f670a56b7d41830deb670d5184948))
+
+
+### Bug Fixes
+
+* **gonic:** strip leading UTF-8 BOM when reading user text files ([05742f4](https://www.github.com/antebudimir/gonic/commit/05742f43536707022647078f92dbcf23450c0d1e))
+* **logging:** omit query parameters from request logs ([#750](https://www.github.com/antebudimir/gonic/issues/750)) ([da1e457](https://www.github.com/antebudimir/gonic/commit/da1e457046e2ed7cf814d9f0de15fba6c94811ea))
+* **playlist:** don't chtimes m3u files on write ([e4f778f](https://www.github.com/antebudimir/gonic/commit/e4f778f2049a1a2c9601202e0ce09603d61d3f05))
+* **subsonic:** don't count now playing scrobbles as plays ([03e696e](https://www.github.com/antebudimir/gonic/commit/03e696ed93a7e733996566a57aea679f92b4e636))
+* **subsonic:** don't serve stale cached covers ([7dd69be](https://www.github.com/antebudimir/gonic/commit/7dd69beee4e1447e53f61c10b32e2249c2f641b2)), closes [#666](https://www.github.com/antebudimir/gonic/issues/666) [#734](https://www.github.com/antebudimir/gonic/issues/734)
+* **subsonic:** load playlist tracks in one query ([1904a0c](https://www.github.com/antebudimir/gonic/commit/1904a0c2b20d42b02490603ff7955beb17a1013c))
+* **subsonic:** parse millisecond timestamps as int64 on 32-bit ([45d963b](https://www.github.com/antebudimir/gonic/commit/45d963b619a90f03d6d6f1268279f0cde41ae32a)), closes [#738](https://www.github.com/antebudimir/gonic/issues/738)
+* **subsonic:** return the latest play in getNowPlaying ([a755ec4](https://www.github.com/antebudimir/gonic/commit/a755ec43b19d0ea5845070f50984a4fb6be81859)), closes [#735](https://www.github.com/antebudimir/gonic/issues/735)
+* **subsonic:** sort folders by name in browse by folder mode ([#745](https://www.github.com/antebudimir/gonic/issues/745)) ([2299e78](https://www.github.com/antebudimir/gonic/commit/2299e785afbe3a2e9f6da01a78e6c62f201b15fb))
+* **subsonic:** use playlist name in new playlist filenames ([c70a20b](https://www.github.com/antebudimir/gonic/commit/c70a20b7786d811c802504d14ec5b04738ece9fa))
+
 ## [0.23.0](https://www.github.com/sentriz/gonic/compare/v0.22.0...v0.23.0) (2026-10-22)
 
 
