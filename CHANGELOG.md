@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+upstream sync from [sentriz/gonic](https://github.com/sentriz/gonic) post-`v0.23.0`
+
+### Bug Fixes
+
+* **playlist:** don't `chtimes` m3u files on write ([upstream #748](https://github.com/sentriz/gonic/issues/748))
+* **gonic:** strip leading UTF-8 BOM when reading user text files, so the first `#GONIC-RULES`/`#EXTM3U` line of a BOM-prefixed m3u is honoured ([upstream #746](https://github.com/sentriz/gonic/issues/746))
+* **subsonic:** sort folders by name in browse by folder mode ([upstream #745](https://github.com/sentriz/gonic/issues/745))
+* **subsonic:** use playlist name in new playlist filenames ([upstream #747](https://github.com/sentriz/gonic/issues/747))
+* **logging:** redact credentials (`p`, `t`, `s`, `apiKey`) in request logs ([upstream #750](https://github.com/sentriz/gonic/issues/750))
+
+### Performance Improvements
+
+* **subsonic:** load playlist tracks in one query ([upstream #744](https://github.com/sentriz/gonic/issues/744))
+
 ## [0.23.0](https://www.github.com/sentriz/gonic/compare/v0.22.0...v0.23.0) (2026-10-22)
 
 
